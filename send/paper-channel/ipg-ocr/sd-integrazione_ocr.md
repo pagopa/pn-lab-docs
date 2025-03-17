@@ -96,3 +96,6 @@ sequenceDiagram
 
     Note over pn, pn_sqs: Time constraint: 12 hours
  ```
+
+>[!NOTE]
+>La specifica delle interfacce è disponibile [qui](./ocr-spec.yml)
