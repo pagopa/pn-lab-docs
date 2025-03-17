@@ -3,6 +3,7 @@ sequenceDiagram
     participant dp as Delivery-Push
     participant pc as Paper-Channel
     participant sqs as Delivery-Queue
+    Participant ext as ExternalChannel
 
     dp ->> pc : PREPARE
     pc -->> dp : OK - PresaInCarico
@@ -25,3 +26,6 @@ sequenceDiagram
     end
 
 ```
+
+
+
