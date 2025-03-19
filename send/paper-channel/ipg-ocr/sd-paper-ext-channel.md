@@ -15,11 +15,11 @@ Al fine di poter incorporare l'esito del servizio OCR nell'elaborazione degli ev
 >| ProductType | DocumentType | Code | >Description| 
 >| -------- | ------- | ------| ------|
 >| AR| AR | RECRN001C| Fascicolo Chiuso
->| AR | AR | RECRN002C| Mancata consegna - >Fascicolo Chiuso 
->| AR | AR | RECRN002F |Irreperibilità >Assoluta - Fascicolo Chiuso 
+>| AR | Plico | RECRN002C| Mancata consegna - >Fascicolo Chiuso 
+>| AR | Plico | RECRN002F |Irreperibilità >Assoluta - Fascicolo Chiuso 
 >|AR | AR | RECRN003C | Consegnato presso >Punti di Giacenza -Fascicolo Chiuso 
->|AR|AR|RECRN004C|Mancata consegna presso >Punti di Giacenza - Fascicolo Chiuso |
->|AR|AR|RECRN005C |Compiuta giacenza - >Fascicolo Chiuso
+>|AR|Plico|RECRN004C|Mancata consegna presso >Punti di Giacenza - Fascicolo Chiuso |
+>|AR|Plico|RECRN005C |Compiuta giacenza - >Fascicolo Chiuso
 
 
 
