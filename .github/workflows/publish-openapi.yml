@@ -1,21 +1,16 @@
-name: Generate and Publish OpenAPI Docs
+name: Generate and Commit OpenAPI Docs
 
 on:
   push:
-    branches:
-      - main  # Trigger workflow on push to main branch
+    paths:
+      - '**/*.yml'  # Trigger workflow on changes to any .yml file
   workflow_dispatch:  # Allow manual triggering of the workflow
 
 permissions:
   contents: write  # Allow writing to the repository
-  pages: write     # Allow publishing to GitHub Pages
-  id-token: write  # Allow using OIDC tokens for authentication
-
 
 jobs:
-  build-and-deploy:
-    environment:
-      name: github-pages
+  build-and-commit:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,13 +28,10 @@ jobs:
       - name: Generate HTML documentation
         run: redoc-cli bundle docs/openapi/sercq.yml -o docs/sercq.html
 
-      - name: Setup GitHub Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: docs
-
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/sercq.html
+          git commit -m "Update OpenAPI documentation [skip ci]" || echo "No changes to commit"
+          git push
