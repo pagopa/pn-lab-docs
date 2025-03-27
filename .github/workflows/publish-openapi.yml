@@ -1,34 +1,42 @@
-name: Publish OpenAPI Documentation
+name: Generate OpenAPI Docs
 
 on:
   push:
     branches:
-      - main
+      - main  # Esegui il workflow su ogni push su main
+  workflow_dispatch:  # Permette di eseguire manualmente il workflow
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # first checkout your code
-      - name: Checkout
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # then use redoc-cli-github-action to generate your HTML bundle
-      - name: redoc-cli test
-        uses: seeebiii/redoc-cli-github-action@v10
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          args: 'bundle docs/openapi/sercq.yml -o sercq.html'
+          node-version: 18
 
-      - name: Install ReDoc CLI
-        run: npm install -g @redocly/cli
+      - name: Install Redoc CLI
+        run: npm install -g redoc-cli
 
-      - name: Generate ReDoc HTML
-        run: redocly build-docs docs/openapi/sercq.yml -o sercq.html
+      - name: Generate HTML documentation
+        run: redoc-cli bundle docs/openapi/sercq.yml -o sercq.html
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          publish_branch: gh-pages
-          destination_dir: /
+        uses: actions/deploy-pages@v4
