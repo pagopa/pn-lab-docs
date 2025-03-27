@@ -3,7 +3,7 @@ name: Generate and Commit OpenAPI Docs
 on:
   push:
     paths:
-      - '**/*.yml'  # Trigger workflow on changes to any .yml file
+      - 'specs/**/*.yml'  # Trigger workflow on changes to any .yml file in the specs folder
   workflow_dispatch:  # Allow manual triggering of the workflow
 
 permissions:
@@ -25,13 +25,17 @@ jobs:
       - name: Install Redoc CLI
         run: npm install -g redoc-cli
 
-      - name: Generate HTML documentation
-        run: redoc-cli bundle docs/openapi/sercq.yml -o docs/sercq.html
+      - name: Generate HTML documentation for all specs
+        run: |
+          for file in specs/**/*.yml; do
+            filename=$(basename "$file" .yml)
+            redoc-cli bundle "$file" -o "docs/${filename}.html"
+          done
 
       - name: Commit and push changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/sercq.html
+          git add docs/*.html
           git commit -m "Update OpenAPI documentation [skip ci]" || echo "No changes to commit"
           git push
