@@ -6,11 +6,9 @@ on:
       - main
 
 jobs:
-  test_job:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    name: Test
     steps:
-
       # first checkout your code
       - name: Checkout
         uses: actions/checkout@v2
@@ -19,4 +17,18 @@ jobs:
       - name: redoc-cli test
         uses: seeebiii/redoc-cli-github-action@v10
         with:
-          args: 'bundle docs/openapi/sercq.yml -o sercq.html' 
+          args: 'bundle docs/openapi/sercq.yml -o sercq.html'
+
+      - name: Install ReDoc CLI
+        run: npm install -g @redocly/cli
+
+      - name: Generate ReDoc HTML
+        run: redocly build-docs docs/openapi/sercq.yml -o sercq.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
+          destination_dir: /
