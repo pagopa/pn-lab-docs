@@ -9,6 +9,8 @@ Al fine di poter incorporare l'esito del servizio OCR nell'elaborazione degli ev
 >[!WARNING]
 > Questo comporta la macchina a stati della notifica rimarrà in progess fino a quando non saranno riscontrati positivamente i metadati 
 
+>[!Note]
+>ExternalChannel deve ordinare gli eventi 
 
 > [!NOTE]
 > **Lista degli Eventi Finali**
