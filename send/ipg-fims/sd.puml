@@ -1,0 +1,102 @@
+@startuml
+!pragma teoz true
+hide unlinked
+skinparam style strictuml
+skinparam maxMessageSize 300
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam sequenceLifeLineBackgroundColor GreenYellow
+autonumber "<font color='blue'><b>#</b></font>"
+
+!function $var($text)
+!return "<font color=green><i><" + $text + "></i></font>"
+!endfunction
+
+
+actor "User" as user
+participant "IO" as io
+participant "OIDC Provider" as fims
+participant "Web App Front-end\nas in-app browser" as rpfe #Yellow
+participant "RP Back-end" as rpbe #Yellow
+database "Redis" as redis
+participant "mil-auth" as auth
+
+
+activate user
+user  ->  io    ++ : click on CTA
+io    ->  rpbe  ++ : GET /login
+rpbe  ->  rpbe     : generate $var('state')
+rpbe  ->  redis ++ : store $var('state') as key with time-to-live
+redis --> rpbe  -- : ok
+rpbe  --> io    -- : HTTP 302 with Location https://oauth.io.pagopa.it/authorize?\nclient_id=$var('client id')&\nresponse_type=code&\nscope=openid&20profile&\nredirect_uri=$var('redirect uri')&\nstate=$var('state')
+
+activate fims
+hnote over io, fims
+	$var('auth code') returned to IO
+end note
+deactivate fims
+
+io    ->  rpbe  ++ : GET $var('redirect uri')?code=$var('auth code')&state=$var('state')
+rpbe  ->  redis ++ : verify $var('state'), if match remove it
+redis --> rpbe  -- : ok
+rpbe  ->  fims  ++ : POST /token
+	note left
+		__header__
+		Authorization: Basic base64($var('client id'):$var('client secret'))
+		Content-Type: application/x-www-form-urlencoded
+		__body__
+		grant_type=authorization_code&
+		code=$var('auth code')&
+		redirect_uri=$var('redirect uri')
+	end note
+fims  --> rpbe  -- : HTTP 200
+	note right
+		{
+			"access_token": "$var('access token')",
+			"token_type": "Bearer",
+			"expires_in": 30,
+			"id_token": "$var('id token')"
+		}
+	end note
+rpbe  ->  rpbe     : validate $var('access token')
+rpbe  ->  rpbe     : validate $var('id token')
+rpbe  ->  rpbe     : extract $var('fiscal code') from sub claim of $var('id token')
+rpbe  ->  auth  ++ : POST /token
+	note left
+		__header__
+		Content-Type: application/x-www-form-urlencoded
+		__body__
+		grant_type=client_credentials&
+		client_id=$var('mil-auth client id')&
+		client_secret=$var('mil-auth client secret')
+	end note
+auth  --> rpbe  -- : HTTP 200
+	note right
+		{
+			"access_token": "$var('mil-auth access token')",
+			"token_type": "Bearer",
+			"expires_in": 3600
+		}
+	end note
+rpbe  ->  rpbe     : generate $var('session id')
+rpbe  ->  redis ++ : store $var('mil-auth access token') with $var('session id') as key with time-to-live
+redis --> rpbe  -- : ok
+rpbe  ->  redis ++ : store $var('fiscal-code') with $var('mil-auth access token') as key with time-to-live
+redis --> rpbe  -- : ok
+rpbe  --> io    -- : HTTP 302 with Location $var('web app front-end')/session/$var('session id')
+
+io    ->> rpfe  ++ : GET /session/$var('session id')
+io    --> user  -- : ack
+rpfe  ->  rpbe  ++ : GET /session/$var('session id')
+rpbe  ->  redis ++ : retrieve $var('mil-auth access token') using $var('session id') as key and remove it
+redis --> rpbe  -- : $var('mil-auth access token')
+rpbe  --> rpfe  -- : HTTP 200
+	note right
+		{
+			"access_token": "$var('mil-auth access token')",
+			"token_type": "Bearer",
+			"expires_in": 3600
+		}
+	end note
+...
+@enduml

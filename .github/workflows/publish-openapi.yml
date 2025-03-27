@@ -22,7 +22,7 @@ jobs:
 
       - name: Generate ReDoc HTML
         run: |
-          redoc-cli bundle send/docs/openapi/sercq.yml -o redoc-static.html
+          redocly build-docs send/docs/openapi/sercq.yml -o redoc-static.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
