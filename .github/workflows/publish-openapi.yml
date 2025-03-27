@@ -1,0 +1,29 @@
+name: Generate OpenAPI Docs
+
+on:
+  push:
+    branches:
+      - main  # Trigger workflow on push to main branch
+  workflow_dispatch:  # Allow manual triggering of the workflow
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install Redoc CLI
+        run: npm install -g redoc-cli
+
+      - name: Generate HTML documentation
+        run: redoc-cli bundle docs/openapi/sercq.yml -o docs/sercq.html
+
+      - name: Verify output location
+        run: ls -la docs
