@@ -1,4 +1,4 @@
-name: Generate and Commit OpenAPI Docs
+name: Generate and Commit API Docs
 
 on:
   push:
@@ -22,14 +22,23 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install Redoc CLI
-        run: npm install -g redoc-cli
-
-      - name: Generate HTML documentation for all specs
+      - name: Install CLI tools
         run: |
-          for file in specs/**/*.yml; do
+          npm install -g redoc-cli
+          npm install -g @asyncapi/html-template
+
+      - name: Generate HTML documentation for OpenAPI specs
+        run: |
+          for file in specs/openapi/**/*.yml; do
             filename=$(basename "$file" .yml)
-            redoc-cli bundle "$file" -o "docs/${filename}.html"
+            redoc-cli bundle "$file" -o "docs/${filename}-openapi.html"
+          done
+
+      - name: Generate HTML documentation for AsyncAPI specs
+        run: |
+          for file in specs/asyncapi/**/*.yml; do
+            filename=$(basename "$file" .yml)
+            asyncapi generate "$file" @asyncapi/html-template -o "docs/${filename}-asyncapi.html"
           done
 
       - name: Commit and push changes
@@ -37,5 +46,5 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/*.html
-          git commit -m "Update OpenAPI documentation [skip ci]" || echo "No changes to commit"
+          git commit -m "Update API documentation [skip ci]" || echo "No changes to commit"
           git push
