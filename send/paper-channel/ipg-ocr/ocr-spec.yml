@@ -68,7 +68,7 @@ components:
         Retrieve information about OCR data result
       contentType: application/json
       payload:
-        $ref: '#/components/schemas/ocr_data_payload'
+        $ref: '#/components/schemas/ocr_data_result_payload'
 
   schemas:
     ocr_data_result_payload: 
@@ -129,16 +129,12 @@ components:
           example: "postal"
         data: 
           type: object
-          properties:   
-            iun:
-              type: string
-              example: "AEWA-XRMY-DHPM-202409-J-1"
+          properties:
             productType:
               type: string
               description: Product type
               enum:
                 - AR
-                - RIR
               example: "AR"
             documentType:
               type: string
@@ -147,12 +143,14 @@ components:
                 - AR
                 - Plico
               example: "AR"
-            deliveryDriver: 
+            unifiedDeliveryDriver: 
               type: string
               description: Delivery driver
               enum:
-                - POSTE
-                - FULMINE
+                - Poste
+                - RTISailpostSnem
+                - PostAndService
+                - Fulmine
               example: "POSTE" 
             details:
               type: object
@@ -160,9 +158,6 @@ components:
                 deliveryDetailCode:
                   type: string
                   example: "RECRN001B"
-                sendRequestId:
-                  type: string
-                  example: "SEND_ANALOG_DOMICILE.IUN_AEWA-XRMY-DHPM-202409-J-1.RECINDEX_0.ATTEMPT_0"
                 notificationDate:
                   type: string
                   format: date-time
@@ -170,14 +165,34 @@ components:
                 registeredLetterCode:
                   type: string
                   example: "R14700511649"
-                attachments:
-                  type: array
-                  items:
-                    type: object
+                deliveryFailureCause:
+                  type: string
+                  enum:
+                    - M01
+                    - M02
+                    - M03
+                    - M04
+                    - M05
+                    - M06
+                    - M07
+                    - M08
+                    - M09
+                  example: "M02"
+                attachment:
+                  type: string
+                  format: uri
+                  example: "safestorage://PN_EXTERNAL_LEGAL_FACTS-14f3dbdc57574459812a96a0a0bc204d.pdf"
+              allOf:
+                - if:
                     properties:
-                      documentType:
-                        type: string
-                        example: "AR"
-                      url:
-                        type: string
-                        example: "safestorage://PN_EXTERNAL_LEGAL_FACTS-14f3dbdc57574459812a96a0a0bc204d.pdf"
+                      deliveryDetailCode:
+                        enum:
+                          - RECRN002B
+                          - RECRN002E
+                  then:
+                    required:
+                      - deliveryFailureCause
+                  else:
+                    not:
+                      required:
+                        - deliveryFailureCause
