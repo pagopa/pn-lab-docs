@@ -148,10 +148,10 @@ components:
               description: Delivery driver
               enum:
                 - Poste
-                - RTISailpostSnem
+                - Sailpost
                 - PostAndService
                 - Fulmine
-              example: "POSTE" 
+              example: "Poste"
             details:
               type: object
               properties:
