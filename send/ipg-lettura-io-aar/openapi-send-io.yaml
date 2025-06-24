@@ -1,0 +1,244 @@
+openapi: 3.0.3
+info:
+  title: SEND - Trigger Push Notification API
+  version: 1.0.0
+  description: |
+    API per il trigger di una push notification da SEND verso il client IO; 
+    Inquadrando il QR-CODE presente all'interno della AAR (Avviso di Avvenuta Ricezione), l'app IO richiede l'invio 
+    del messaggio di cortesia verso il cittadino che ha inquadrato il QR-CODE. Qualora il messaggio di cortesia fosse stato già inviato 
+    viene restituito l'identificativo del messaggio già inviato.
+
+    ```mermaid
+    sequenceDiagram
+      participant IO as App IO
+      participant SEND as SEND API
+
+      IO->>SEND: POST /io/push-notification/{qrContent} + headers
+      alt Notifica non ancora inviata
+        SEND-->>IO: 200 OK (status: SENT, messageId)
+      else Notifica già inviata
+        SEND-->>IO: 202 Accepted (status: ALREADY_TRIGGERED, messageId)
+      else Utente non autorizzato
+        SEND-->>IO: 403 Forbidden (status: ERROR, error: FORBIDDEN, message)
+      else Errore generico
+        SEND-->>IO: 400/500 (status: ERROR, error, message)
+      end
+    ```
+
+servers:
+  - url: api-io.notifichedigitali.it
+    description: SEND Production
+
+paths:
+  /delivery-push/push-notification/{qrContent}:
+    post:
+      summary: Trigger invio push notification su IO
+      description: |
+        Endpoint per richiedere l’invio di una push notification tramite IO. 
+        Il parametro `qrContent` rappresenta il contenuto estratto dal QR-code (senza la baseurl).
+
+        **Autenticazione:**  
+        È richiesta autenticazione tramite API Key, da inserire nell'header `x-api-key`.  
+        Ulteriori header di sicurezza sono richiesti per la firma e la validazione della richiesta (vedi parametri Lollipop e firma HTTP).
+      security:
+        - ApiKeyAuth: []
+      parameters:
+        - name: qrContent
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Contenuto estratto dal QR-code (senza la baseurl)
+        - $ref: '#/components/parameters/XPagopaCxTaxId'
+        - $ref: '#/components/parameters/XPagopaLollipopAssertionRef'
+        - $ref: '#/components/parameters/XPagopaLollipopSignature'
+        - $ref: '#/components/parameters/XPagopaLollipopUserId'
+        - $ref: '#/components/parameters/XPagopaLollipopPublicKey'
+        - $ref: '#/components/parameters/XPagopaLollipopAssertionType'
+        - $ref: '#/components/parameters/XPagopaLollipopAuthJwt'
+        - $ref: '#/components/parameters/XPagopaLollipopOriginalMethod'
+        - $ref: '#/components/parameters/XPagopaLollipopOriginalUrl'
+        - $ref: '#/components/parameters/SignatureInput'
+        - $ref: '#/components/parameters/Signature'
+        - $ref: '#/components/parameters/XApiKey'
+      requestBody:
+        description: Nessun body richiesto, tutte le informazioni sono passate tramite path e header.
+        required: false
+        content: {}
+      responses:
+        '200':
+          description: Notifica inviata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushNotificationStandardResponse'
+        '202':
+          description: Il trigger è già stato attivato in precedenza. Viene restituito l'identificativo del messaggio già inviato.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushNotificationStandardResponse'
+        '400':
+          description: Richiesta non valida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushNotificationErrorResponse'
+        '403':
+          description: L'utente non ha i permessi per visualizzare la notifica richiesta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushNotificationErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PushNotificationErrorResponse'
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: x-api-key
+      description: API Key necessaria per autenticazione della richiesta
+
+  parameters:
+    XPagopaCxTaxId:
+      in: header
+      name: x-pagopa-cx-taxid
+      required: true
+      schema:
+        type: string
+      description: Codice fiscale del destinatario (utente IO)
+      example: RSSMRA85M01H501Z
+    XPagopaLollipopAssertionRef:
+      in: header
+      name: x-pagopa-lollipop-assertion-ref 
+      required: true
+      schema:
+        type: string
+      description: Riferimento all'asserzione Lollipop per la firma della richiesta
+      example: "assertion-ref-123"
+    XPagopaLollipopSignature:
+      in: header
+      name: x-pagopa-lollipop-signature
+      required: true
+      schema:
+        type: string
+      description: Firma Lollipop della richiesta
+      example: "MEUCIQDn..."
+    XPagopaLollipopUserId:
+      in: header
+      name: x-pagopa-lollipop-user-id
+      required: true
+      schema:
+        type: string
+      description: Codice Fiscale del cittadino che ha richiesto l’operazione
+      example: RSSMRA85M01H501Z
+    XPagopaLollipopPublicKey:
+      in: header
+      name: x-pagopa-lollipop-public-key
+      required: true
+      schema:
+        type: string
+      description: JWK della chiave pubblica, codificato in Base64Url.
+      example: "eyJrdHkiOiJFQyIsIngiOiJGSnNHMXlWRG5IT0JlOF9acTh6cjRldXAtRXpZemVCdU9EaVRiVlZpNk9FIiwieSI6InBKMmt4d0pTOElxUlhsNjcxOGJ0RzJ5NzZOT1o5czZ6V19zaDBMMERCOXciLCJjcnYiOiJQLTI1NiJ9"
+    XPagopaLollipopAssertionType:
+      in: header
+      name: x-pagopa-lollipop-assertion-type
+      required: true
+      schema:
+        type: string
+      description: Tipo di assertion SPID
+      example: "SPID"
+    XPagopaLollipopAuthJwt:
+      in: header
+      name: x-pagopa-lollipop-auth-jwt
+      required: true
+      schema:
+        type: string
+      description: Auth token (JWT) richiesto per poter recuperare l’assertion SPID. Valido 15 minuti dall’emissione.
+      example: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+    XPagopaLollipopOriginalMethod:
+      in: header
+      name: x-pagopa-lollipop-original-method
+      required: true
+      schema:
+        type: string
+      description: Metodo HTTP usato per l’endpoint del flusso LolliPoP
+      example: "POST"
+    XPagopaLollipopOriginalUrl:
+      in: header
+      name: x-pagopa-lollipop-original-url
+      required: true
+      schema:
+        type: string
+      description: URL usato per l’endpoint del flusso LolliPoP
+      example: "https://api.send.pagopa.it/io/push-notification/..."
+    SignatureInput:
+      in: header
+      name: signature-input
+      required: true
+      schema:
+        type: string
+      description: Header che contiene quali parametri sono firmati, Thumbprint e il nonce (se presente), come da RFC 9421-HTTP Message Signatures
+      example: 'sig1=();created=1618884473;keyid="test-key-ecc-p256"'
+    Signature:
+      in: header
+      name: signature
+      required: true
+      schema:
+        type: string
+      description: Header che contiene in ordine le firme dei campi dichiarati in signature-input, come da RFC 9421-HTTP Message Signatures
+      example: 'MEUCIQDn...'
+    XApiKey:
+      in: header
+      name: x-api-key
+      required: true
+      schema:
+        type: string
+      description: API Key per autenticazione della richiesta
+      example: "your-api-key-value"
+
+  schemas:
+    PushNotificationRequest:
+      type: object
+      description: "Non utilizzato: il body della richiesta è vuoto."
+      properties: {}
+
+    PushNotificationStandardResponse:
+      type: object
+      required:
+        - status
+        - messageId
+      properties:
+        status:
+          type: string
+          description: Stato della chiamata (SENT, ALREADY_TRIGGERED)
+          example: "SENT"
+        messageId:
+          type: string
+          description: Identificativo della notifica inviata o già inviata
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+    PushNotificationErrorResponse:
+      type: object
+      required:
+        - status
+        - error
+      properties:
+        status:
+          type: string
+          description: Stato della chiamata (ERROR, FORBIDDEN, ecc.)
+          example: "ERROR"
+        error:
+          type: string
+          description: Codice o descrizione dell'errore
+          example: "FORBIDDEN"
+        message:
+          type: string
+          description: Messaggio di errore dettagliato
+          example: "Non hai i permessi per visualizzare questa notifica."
