@@ -9,7 +9,7 @@ info:
     ### L'accesso agli allegati di una notifica
     <img src="https://raw.githubusercontent.com/pagopa/pn-lab-docs/refs/heads/ipg-lettura-io-aar/send/ipg-lettura-io-aar/image/visualizzazione_notifica.svg">
     ### Creazione di una delega
-    <img src="https://raw.githubusercontent.com/pagopa/pn-lab-docs/refs/heads/ipg-lettura-io-aar/send/ipg-lettura-io-aar/image/visualizzazione_notifica.svg">
+    <img src="https://raw.githubusercontent.com/pagopa/pn-lab-docs/refs/heads/ipg-lettura-io-aar/send/ipg-lettura-io-aar/image/creazione_delega.svg">
 
 servers:
   - url: api-io.notifichedigitali.it
