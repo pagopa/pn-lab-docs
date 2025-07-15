@@ -1,14 +1,13 @@
 openapi: 3.0.3
 info:
-  title: SEND - Trigger Push Notification API
+  title: SEND
   version: 1.0.0
   description: |
   
     ### L'accesso ad una notifica'
-    <img src="https://www.mermaidchart.com/play?utm_source=mermaid_js&utm_medium=editor_selection&utm_campaign=playground#pako:eNq9kUFPAkEMhf_Ky14JgagnDiRETODggspxLt2ZsjRZOjA7GA3hv9td9GS8GOOpk9c37df2XPgYuJgULR9PrJ7nQnWivdMqvmHmPbdtxKxpCBqzbMWTUwAHSlm8HEgzXh7KOajt47fkctWlliunrKHLOjVpOJ329glGEkdflbNEbUfnY7o3pgsGCCYhid8JB9bMTsuY2ZR6lxG3VnaCp2d0I0Cs9jamPeWItqK6EXs57eGGXb_OvNhs1rgbj43irznKz884cII_CcpVCaoqoX3EKzUSCIEbri0I6LrZH_hurWcZ7Rr_gPkrxBtb4QCbnaSwtmO_P5qTau7Xej2y0-LyAXBMypY">
+    <img src="https://raw.githubusercontent.com/pagopa/pn-lab-docs/refs/heads/ipg-lettura-io-aar/send/ipg-lettura-io-aar/image/lettura_notifica.svg">
     ### L'accesso agli allegati di una notifica'
-    <img src="https://www.mermaidchart.com/play?utm_source=mermaid_js&utm_medium=editor_selection&utm_campaign=playground#pako:eNqtkU9vwjAMxb-K1euEinbkgDSNSeNAhzaOXExiWkttUpp0G6r47rPbwf5xQGiqlFhO_N7vNV1ivKVkkgTateQMzRjzBqu1A6ixiWy4Rhdh_gQYZP3df3nIZnqi-9rpaeYjQcN5EcFvZWKiHd6yQaipAdMy4GbDWHl4xZItgqWSctnkwBgKwauMGI6m0153Ain71H2qRPYupN2uuRfwA9yAlZYYmoLJkouk0z3WSAUU4HG1WsLteCyXVwU3dikB9gtxwlxv68AZ7Jl_c6VHC1gqn5hIgXDkGNJeiJlijGiKSvhCar1ph6qTcm7fTynkT1ycJPtmdHdSP0IvKKJI4jOFWkB6qfOv8zemPESNOaqcV6Qfoa-LXONei7T7amZicPjXhMOXHD4ARVD5HA">
-
+    <img src="https://raw.githubusercontent.com/pagopa/pn-lab-docs/refs/heads/ipg-lettura-io-aar/send/ipg-lettura-io-aar/image/visualizzazione_notifica.svg">
 servers:
   - url: api-io.notifichedigitali.it
     description: SEND Production
