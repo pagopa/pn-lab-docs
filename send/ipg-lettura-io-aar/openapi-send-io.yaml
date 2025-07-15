@@ -4,10 +4,13 @@ info:
   version: 1.0.0
   description: |
   
-    ### L'accesso ad una notifica'
+    ### L'accesso ad una notifica
     <img src="https://raw.githubusercontent.com/pagopa/pn-lab-docs/refs/heads/ipg-lettura-io-aar/send/ipg-lettura-io-aar/image/lettura_notifica.svg">
-    ### L'accesso agli allegati di una notifica'
+    ### L'accesso agli allegati di una notifica
     <img src="https://raw.githubusercontent.com/pagopa/pn-lab-docs/refs/heads/ipg-lettura-io-aar/send/ipg-lettura-io-aar/image/visualizzazione_notifica.svg">
+    ### Creazione di una delega
+    <img src="https://raw.githubusercontent.com/pagopa/pn-lab-docs/refs/heads/ipg-lettura-io-aar/send/ipg-lettura-io-aar/image/visualizzazione_notifica.svg">
+
 servers:
   - url: api-io.notifichedigitali.it
     description: SEND Production
@@ -175,14 +178,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/Problem'
 
-  "/io/mandate/oneShot/{iun}":
+  "/io/mandate/oneShot/{qrCode}":
     post:
       tags:
         - mandate-service
       summary: Create a new mandate, returns the just created mandate if successful
       operationId: createMandateOneShot
       parameters:                                                               # NO EXTERNAL
-        - $ref: "#/components/parameters/pathIun"
+        - $ref: "#/components/parameters/qrCode"
         - $ref: '#/components/parameters/uidAuthFleet'                        # NO EXTERNAL
         - $ref: '#/components/parameters/cxTypeAuthFleet'                     # NO EXTERNAL
         - $ref: '#/components/parameters/cxIdAuthFleet'                       # NO EXTERNAL
@@ -217,7 +220,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
 
 
 components:
