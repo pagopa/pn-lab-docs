@@ -3,99 +3,223 @@ info:
   title: SEND - Trigger Push Notification API
   version: 1.0.0
   description: |
-    API per il trigger di una push notification da SEND verso il client IO; 
-    Inquadrando il QR-CODE presente all'interno della AAR (Avviso di Avvenuta Ricezione), l'app IO richiede l'invio 
-    del messaggio di cortesia verso il cittadino che ha inquadrato il QR-CODE. Qualora il messaggio di cortesia fosse stato già inviato 
-    viene restituito l'identificativo del messaggio già inviato.
-
-    ```mermaid
-    sequenceDiagram
-      participant IO as App IO
-      participant SEND as SEND API
-
-      IO->>SEND: POST /io/push-notification/{qrContent} + headers
-      alt Notifica non ancora inviata
-        SEND-->>IO: 200 OK (status: SENT, messageId)
-      else Notifica già inviata
-        SEND-->>IO: 202 Accepted (status: ALREADY_TRIGGERED, messageId)
-      else Utente non autorizzato
-        SEND-->>IO: 403 Forbidden (status: ERROR, error: FORBIDDEN, message)
-      else Errore generico
-        SEND-->>IO: 400/500 (status: ERROR, error, message)
-      end
-    ```
+  
+    ### L'accesso ad una notifica'
+    <img src="https://www.mermaidchart.com/play?utm_source=mermaid_js&utm_medium=editor_selection&utm_campaign=playground#pako:eNq9kUFPAkEMhf_Ky14JgagnDiRETODggspxLt2ZsjRZOjA7GA3hv9td9GS8GOOpk9c37df2XPgYuJgULR9PrJ7nQnWivdMqvmHmPbdtxKxpCBqzbMWTUwAHSlm8HEgzXh7KOajt47fkctWlliunrKHLOjVpOJ329glGEkdflbNEbUfnY7o3pgsGCCYhid8JB9bMTsuY2ZR6lxG3VnaCp2d0I0Cs9jamPeWItqK6EXs57eGGXb_OvNhs1rgbj43irznKz884cII_CcpVCaoqoX3EKzUSCIEbri0I6LrZH_hurWcZ7Rr_gPkrxBtb4QCbnaSwtmO_P5qTau7Xej2y0-LyAXBMypY">
+    ### L'accesso agli allegati di una notifica'
+    <img src="https://www.mermaidchart.com/play?utm_source=mermaid_js&utm_medium=editor_selection&utm_campaign=playground#pako:eNqtkU9vwjAMxb-K1euEinbkgDSNSeNAhzaOXExiWkttUpp0G6r47rPbwf5xQGiqlFhO_N7vNV1ivKVkkgTateQMzRjzBqu1A6ixiWy4Rhdh_gQYZP3df3nIZnqi-9rpaeYjQcN5EcFvZWKiHd6yQaipAdMy4GbDWHl4xZItgqWSctnkwBgKwauMGI6m0153Ain71H2qRPYupN2uuRfwA9yAlZYYmoLJkouk0z3WSAUU4HG1WsLteCyXVwU3dikB9gtxwlxv68AZ7Jl_c6VHC1gqn5hIgXDkGNJeiJlijGiKSvhCar1ph6qTcm7fTynkT1ycJPtmdHdSP0IvKKJI4jOFWkB6qfOv8zemPESNOaqcV6Qfoa-LXONei7T7amZicPjXhMOXHD4ARVD5HA">
 
 servers:
   - url: api-io.notifichedigitali.it
     description: SEND Production
 
 paths:
-  /delivery-push/push-notification/{qrContent}:
-    post:
-      summary: Trigger invio push notification su IO
+  "/io/notifications/{qrCode}/attachments/payment/{attachmentName}":
+    get:
+      summary: Download allegato per pagamento
       description: |
-        Endpoint per richiedere l’invio di una push notification tramite IO. 
-        Il parametro `qrContent` rappresenta il contenuto estratto dal QR-code (senza la baseurl).
-
-        **Autenticazione:**  
-        È richiesta autenticazione tramite API Key, da inserire nell'header `x-api-key`.  
-        Ulteriori header di sicurezza sono richiesti per la firma e la validazione della richiesta (vedi parametri Lollipop e firma HTTP).
-      security:
-        - ApiKeyAuth: []
+        Endpoint per il download di un allegato di pagamento: richiede i dati della notifica (iun, recipient).
+        Se il recipient non corrisponde allo userid del visualizzatore, viene cercata una delega valida; in caso 
+        questa non esista, viene restituito un HTTP FORBIDDEN con un nonce da utilizzare in fase di creazione della 
+        delega e i dati del recipient che risulterà essere il delegante della delega one shot
+      tags:
+        - AppIO-PN-Notification
+      operationId: getReceivedNotificationAttachment
       parameters:
-        - name: qrContent
-          in: path
-          required: true
-          schema:
-            type: string
-          description: Contenuto estratto dal QR-code (senza la baseurl)
-        - $ref: '#/components/parameters/XPagopaCxTaxId'
-        - $ref: '#/components/parameters/XPagopaLollipopAssertionRef'
-        - $ref: '#/components/parameters/XPagopaLollipopSignature'
-        - $ref: '#/components/parameters/XPagopaLollipopUserId'
-        - $ref: '#/components/parameters/XPagopaLollipopPublicKey'
-        - $ref: '#/components/parameters/XPagopaLollipopAssertionType'
-        - $ref: '#/components/parameters/XPagopaLollipopAuthJwt'
-        - $ref: '#/components/parameters/XPagopaLollipopOriginalMethod'
-        - $ref: '#/components/parameters/XPagopaLollipopOriginalUrl'
-        - $ref: '#/components/parameters/SignatureInput'
-        - $ref: '#/components/parameters/Signature'
-        - $ref: '#/components/parameters/XApiKey'
-      requestBody:
-        description: Nessun body richiesto, tutte le informazioni sono passate tramite path e header.
-        required: false
-        content: {}
+        - $ref: "#/components/parameters/qrCode"
+        - $ref: '#/components/parameters/pathAttachmentName'
+        - $ref: '#/components/parameters/attachmentIdx'
+        - $ref: '#/components/parameters/uidAuthFleet'                        # NO EXTERNAL
+        - $ref: '#/components/parameters/cxTypeAuthFleet'                     # NO EXTERNAL
+        - $ref: '#/components/parameters/cxIdAuthFleet'                       # NO EXTERNAL
+        - $ref: '#/components/parameters/cxGroupsAuthFleet'                   # NO EXTERNAL
+        - $ref: '#/components/parameters/headerSourceChannel'                 # NO EXTERNAL
+        - $ref: '#/components/parameters/headerSourceChannelDetails'          # NO EXTERNAL
+        - $ref: '#/components/parameters/cxTaxIdAuthFleet'                                              # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopOriginalUrl'                                     # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopOriginalMethod'                                  # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopPublicKey'                                       # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAssertionRef'                                    # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAssertionType'                                   # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAuthJwt'                                         # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopUserId'                                          # ONLY EXTERNAL
+        - $ref: '#/components/parameters/SignatureInput'                                                 # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopSignature'                                       # ONLY EXTERNAL
       responses:
         '200':
-          description: Notifica inviata con successo
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PushNotificationStandardResponse'
-        '202':
-          description: Il trigger è già stato attivato in precedenza. Viene restituito l'identificativo del messaggio già inviato.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PushNotificationStandardResponse'
+                $ref: '#/components/schemas/NotificationAttachmentDownloadMetadataResponse'
         '400':
-          description: Richiesta non valida
+          description: Bad request
           content:
-            application/json:
+            application/problem+json:
               schema:
-                $ref: '#/components/schemas/PushNotificationErrorResponse'
+                $ref: '#/components/schemas/Problem'
         '403':
-          description: L'utente non ha i permessi per visualizzare la notifica richiesta.
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenResponse"
+        '404':
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  "/io/notifications/{qrCode}":
+    get:
+      summary: Accesso notifiche ricevute
+      description: |
+        Endpoint per la lettura dei dati di una notifica (a partire da iun, recipient).
+        Se il recipient non corrisponde allo userid del visualizzatore, viene cercata una delega valida; in caso 
+        questa non esista, viene restituito un HTTP FORBIDDEN con un nonce da utilizzare in fase di creazione della 
+        delega e i dati del recipient che risulterà essere il delegante della delega one shot
+      tags:
+        - AppIO-PN-Notification
+      operationId: getReceivedNotification
+      parameters:
+        - $ref: "#/components/parameters/qrCode"
+        - $ref: '#/components/parameters/uidAuthFleet'                        # NO EXTERNAL
+        - $ref: '#/components/parameters/cxTypeAuthFleet'                     # NO EXTERNAL
+        - $ref: '#/components/parameters/cxIdAuthFleet'                       # NO EXTERNAL
+        - $ref: '#/components/parameters/cxGroupsAuthFleet'                   # NO EXTERNAL
+        - $ref: '#/components/parameters/headerSourceChannel'                 # NO EXTERNAL
+        - $ref: '#/components/parameters/headerSourceChannelDetails'          # NO EXTERNAL
+        - $ref: '#/components/parameters/cxTaxIdAuthFleet'                                               # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopOriginalUrl'                                     # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopOriginalMethod'                                  # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopPublicKey'                                       # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAssertionRef'                                    # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAssertionType'                                   # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAuthJwt'                                         # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopUserId'                                          # ONLY EXTERNAL
+        - $ref: '#/components/parameters/SignatureInput'                                                 # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopSignature'                                       # ONLY EXTERNAL
+      responses:
+        '200':
+          description: OK
+          content:
+            application/io+json:
+              schema:
+                $ref: "#/components/schemas/ThirdPartyMessage"
+        '400':
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenResponse"
+
+  "/io/notifications/{qrCode}/attachments/documents/{docIdx}":
+    get:
+      summary: Download documento notificato
+      description: |
+        Endpoint per il download di un documento della notifica: richiede i dati della notifica (iun, recipient).
+        Se il recipient non corrisponde allo userid del visualizzatore, viene cercata una delega valida; in caso 
+        questa non esista, viene restituito un HTTP FORBIDDEN con un nonce da utilizzare in fase di creazione della 
+        delega e i dati del recipient che risulterà essere il delegante della delega one shot
+      tags:
+        - AppIO-PN-Notification
+      operationId: getReceivedNotificationDocument
+      parameters:
+        - $ref: "#/components/parameters/qrCode"
+        - $ref: '#/components/parameters/pathDocumentIdx'
+        - $ref: '#/components/parameters/uidAuthFleet'                        # NO EXTERNAL
+        - $ref: '#/components/parameters/cxTypeAuthFleet'                     # NO EXTERNAL
+        - $ref: '#/components/parameters/cxIdAuthFleet'                       # NO EXTERNAL
+        - $ref: '#/components/parameters/cxGroupsAuthFleet'                   # NO EXTERNAL
+        - $ref: '#/components/parameters/headerSourceChannel'                 # NO EXTERNAL
+        - $ref: '#/components/parameters/headerSourceChannelDetails'          # NO EXTERNAL
+        - $ref: '#/components/parameters/cxTaxIdAuthFleet'                                               # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopOriginalUrl'                                     # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopOriginalMethod'                                  # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopPublicKey'                                       # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAssertionRef'                                    # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAssertionType'                                   # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAuthJwt'                                         # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopUserId'                                          # ONLY EXTERNAL
+        - $ref: '#/components/parameters/SignatureInput'                                                 # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopSignature'                                       # ONLY EXTERNAL
+      responses:
+        '200':
+          description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PushNotificationErrorResponse'
-        '500':
-          description: Errore interno del server
+                $ref: '#/components/schemas/NotificationAttachmentDownloadMetadataResponse'
+        '400':
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: "Forbidden"
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenResponse"
+        '404':
+          description: Not Found
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  "/io/mandate/oneShot/{iun}":
+    post:
+      tags:
+        - mandate-service
+      summary: Create a new mandate, returns the just created mandate if successful
+      operationId: createMandateOneShot
+      parameters:                                                               # NO EXTERNAL
+        - $ref: "#/components/parameters/pathIun"
+        - $ref: '#/components/parameters/uidAuthFleet'                        # NO EXTERNAL
+        - $ref: '#/components/parameters/cxTypeAuthFleet'                     # NO EXTERNAL
+        - $ref: '#/components/parameters/cxIdAuthFleet'                       # NO EXTERNAL
+        - $ref: '#/components/parameters/cxGroupsAuthFleet'                   # NO EXTERNAL
+        - $ref: '#/components/parameters/headerSourceChannel'                 # NO EXTERNAL
+        - $ref: '#/components/parameters/headerSourceChannelDetails'          # NO EXTERNAL
+        - $ref: '#/components/parameters/cxTaxIdAuthFleet'                                               # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopOriginalUrl'                                     # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopOriginalMethod'                                  # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopPublicKey'                                       # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAssertionRef'                                    # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAssertionType'                                   # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopAuthJwt'                                         # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopUserId'                                          # ONLY EXTERNAL
+        - $ref: '#/components/parameters/SignatureInput'                                                 # ONLY EXTERNAL
+        - $ref: '#/components/parameters/XPagopaLollipopSignature'                                       # ONLY EXTERNAL
+
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MandateCreationRequest'
+      responses:
+        '201':
+          description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PushNotificationErrorResponse'
+                $ref: '#/components/schemas/MandateDto'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: 'remote-refs.yaml#/components/schemas/Problem'
+
 
 components:
   securitySchemes:
@@ -202,43 +326,686 @@ components:
         type: string
       description: API Key per autenticazione della richiesta
       example: "your-api-key-value"
+ 
+
+
+    pathAttachmentName:
+      name: attachmentName
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 3
+        maxLength: 6
+        pattern: "PAGOPA|F24"
+
+    attachmentIdx:
+      in: query
+      name: attachmentIdx
+      description: indice del documento di pagamento partendo da 0
+      required: false
+      schema:
+        type: integer
+        format: int32
+
+    uidAuthFleet:
+      name: x-pagopa-pn-uid
+      in: header
+      description: User Identifier
+      required: true
+      schema:
+        type: string
+        # ASCII printable characters
+        pattern: ^[ -~]*$
+        maxLength: 64
+    cxTypeAuthFleet:
+      name: x-pagopa-pn-cx-type
+      in: header
+      description: Customer/Receiver Type
+      required: true
+      schema:
+        $ref: '#/components/schemas/CxTypeAuthFleet'
+    cxIdAuthFleet:
+      name: x-pagopa-pn-cx-id
+      in: header
+      description: Customer/Receiver Identifier
+      required: true
+      schema:
+        type: string
+        # ASCII printable characters
+        pattern: ^[ -~]*$
+        maxLength: 64
+    cxGroupsAuthFleet:
+      name: x-pagopa-pn-cx-groups
+      in: header
+      description: Customer Groups
+      required: false
+      schema:
+        type: array
+        items:
+          type: string
+          # ASCII printable characters
+          pattern: ^[ -~]*$
+          maxLength: 1024
+    cxTaxIdAuthFleet:
+      name: x-pagopa-cx-taxid
+      in: header
+      description: Customer taxId, used in B2B AppIO.
+      required: true
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 16
+        pattern: '^[A-Z]{6}[0-9LMNPQRSTUV]{2}[A-Z]{1}[0-9LMNPQRSTUV]{2}[A-Z]{1}[0-9LMNPQRSTUV]{3}[A-Z]{1}'
+    cxRoleAuthFleet:
+      name: x-pagopa-pn-cx-role
+      in: header
+      description: User role
+      required: true
+      schema:
+        type: string
+        # ASCII printable characters
+        pattern: ^[ -~]*$
+        maxLength: 64
+
+    headerSourceChannel:
+      name: x-pagopa-pn-src-ch
+      in: header
+      description: User login source channel
+      required: true
+      schema:
+        type: string
+        maxLength: 3
+        pattern: "B2B|WEB|TPP"
+    headerSourceChannelDetails:
+      name: x-pagopa-pn-src-ch-details
+      in: header
+      description: User login source channel details
+      required: false
+      schema:
+        type: string
+    
+    pathDocumentIdx:
+      name: docIdx
+      description: indice del documento nella lista partendo da 0.
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+
+    qrCode:
+      name: qrCode
+      required: true
+      in: path
+      schema:
+        type: string
+      
+
+    ############################################################################################
+    ###                             PARAMETRI RECUPERO NOTIFICA                              ###
+    ############################################################################################
+    pathIun:
+      description: >-
+        Identificativo Univoco Notifica
+      name: iun
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 25
+        maxLength: 25
+        pattern: ^[A-Z]{4}-[A-Z]{4}-[A-Z]{4}-[0-9]{6}-[A-Z]{1}-[0-9]{1}$
+
+    ############################################################################################
+    ###                               PARAMETRI RICERCA NOTIFICHE                            ###
+    ############################################################################################
+    notificationSearchStartDate:
+      name: startDate
+      in: query
+      required: true
+      description: data/ora di inizio dell'intervallo entro cui eseguire la ricerca
+      schema:
+        type: string
+        format: date-time
+    notificationSearchEndDate:
+      name: endDate
+      in: query
+      required: true
+      description: data/ora di fine dell'intervallo entro cui eseguire la ricerca
+      schema:
+        type: string
+        format: date-time
+    notificationSearchMandateId:
+      name: mandateId
+      in: query
+      required: false
+      description: identificativo della delega
+      schema:
+        type: string
+    notificationSearchRecipientId:
+      name: recipientId
+      in: query
+      required: false
+      description: identificativo del destinatario
+      schema:
+        type: string
+        x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+    notificationSearchRecipientIdIsOpaque:
+      name: recipientIdOpaque
+      description: >-
+        Se presente indica che il recipient id è opaco (usato da BE) o in chiaro (usato da FE)
+      in: query
+      required: false
+      schema:
+        type: boolean
+        default: false
+    notificationSearchStatus:
+      name: status
+      in: query
+      required: false
+      description: stato della notifica
+      schema:
+        $ref: './remote-refs.yaml#/components/schemas/NotificationStatusV26'
+    notificationSearchStatuses:
+      name: status
+      in: query
+      required: false
+      description: stato della notifica
+      schema:
+        type: array
+        items:
+          $ref: './remote-refs.yaml#/components/schemas/NotificationStatusV26'
+    notificationSearchSubject:
+      name: subjectRegExp
+      description: >-
+        Regular expression usata, se presente, per filtrare i risultati in base al subject 
+        delle notifiche.
+      in: query
+      required: false
+      schema:
+        type: string
+    notificationSearchIun:
+      name: iunMatch
+      description: >-
+        Se presente indica che lo IUN dei risultati deve essere uguale al valore di questo parametro.
+      in: query
+      required: false
+      schema:
+        type: string
+    notificationSearchPageSize:
+      name: size
+      description: >-
+        dimensione della pagina di risultati
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int32
+        maximum: 50
+    notificationSearchNextPagesKey:
+      name: nextPagesKey
+      description: >-
+        Chiave indicante la pagina di risultati, da specificare solo se si vuole una pagina 
+        diversa dalla prima.
+      in: query
+      required: false
+      schema:
+        type: string
+    notificationSearchSenderId:
+      name: senderId
+      in: query
+      required: false
+      description: identificativo del mittente
+      schema:
+        type: string
+    notificationSearchGroup:
+      name: group
+      in: query
+      required: false
+      description: Gruppo da utilizzare nella query come filtro
+      schema:
+        type: string
+    cxType:
+      name: cxType
+      in: query
+      required: false
+      description: Tipo di destinatario
+      schema:
+        type: string
+
+  
+
+        
+    recipientInternalId:
+      in: query
+      name: attachmentIdx
+      required: false
+      schema:
+        type: string
 
   schemas:
-    PushNotificationRequest:
+    ForbiddenResponse:
       type: object
-      description: "Non utilizzato: il body della richiesta è vuoto."
-      properties: {}
+      description: >
+        In caso di tentativo di accesso non autorizzato, restituiamo un nonce che dovrà essere 
+        utilizzato nella richiesta di creazione di delega successiva. Il nonce ha una validità
+        ancora non definita. Restituiamo un oggetto per possibili espansioni successive
+      required:
+        - Nonce
+      properties: 
+        Nonce:
+          $ref: "#/components/schemas/Nonce"
+    
+    ThirdPartyMessage:
+      type: object
+      properties:
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ThirdPartyAttachment"
+        details:
+          $ref: "#/components/schemas/IOReceivedNotification"
 
-    PushNotificationStandardResponse:
+    ThirdPartyAttachment:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+        content_type:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+        url:
+          type: string
+          minLength: 1
+        category:
+          type: string
+          enum:
+            - DOCUMENT
+            - F24
+      required:
+        - id
+        - url
+        - category
+
+    IOReceivedNotification:
+      description: >-
+        Le informazioni riguardanti una richiesta di notifica accettata e il processo di 
+        inoltro della notifica verso i destinatari (Persone Fisiche o Giuridiche).
+      type: object
+      properties:
+        subject:
+          type: string
+        iun:
+          type: string
+        recipients:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationRecipient'
+        notificationStatusHistory:
+          $ref: '#/components/schemas/NotificationStatusHistory'
+        abstract:
+          type: string
+        senderDenomination:
+          type: string
+        completedPayments:
+          $ref: '#/components/schemas/CompletedPayments'
+        isCancelled:
+          type: boolean
+          description: indica se la notifica è stata annullata
+      required:
+        - subject
+        - iun
+        - recipients
+        - notificationStatusHistory
+
+    
+    NotificationRecipient:
+      description: Informazioni sui destinatari
+      required:
+        - denomination
+        - recipientType
+        - taxId
+      type: object
+      properties:
+        recipientType:
+          type: string
+          description: >
+            Tipologia di destinatario: Persona Fisica (PF) o Persona Giuridica (PG).
+            * `PF`
+            * `PG`
+        taxId:
+          $ref: 'schemas-pn-notification.yaml#/components/schemas/TaxId'
+        denomination:
+          $ref: 'schemas-pn-notification.yaml#/components/schemas/Denomination'
+        payment:
+          $ref: '#/components/schemas/NotificationPaymentInfo'
+
+    
+    NotificationStatusHistory:
+      description: elenco degli avanzamenti effettuati dal processo di notifica
+      type: array
+      items:
+        $ref: "#/components/schemas/NotificationStatusHistoryElement"
+
+
+
+
+    CompletedPayments:
+      description: elenco dei pagamenti completati
+      type: array
+      items:
+        $ref: '#/components/schemas/noticeCode'
+
+    
+    TaxId:
+      description: C.F. persona fisica o persona giuridica
+      type: string
+      x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+      minLength: 11
+      maxLength: 16
+      pattern: ^([A-Z]{6}[0-9LMNPQRSTUV]{2}[A-Z]{1}[0-9LMNPQRSTUV]{2}[A-Z]{1}[0-9LMNPQRSTUV]{3}[A-Z]{1})|([0-9]{11})$
+
+    Denomination:
+      description: >-
+        Denominazione ente o persona fisica / ragione sociale.
+        La codifica prevede i caratteri ISO LATIN 1, senza | e senza i caratteri di controllo, ovvero la seguente regexp: ^[ -{}~\u00A0-ÿ]*$
+      type: string
+      x-field-extra-annotation: "@lombok.ToString.Exclude" # NO EXTERNAL
+      minLength: 1
+#      maxLength: 44                     # ONLY EXTERNAL
+      pattern: ^.*$
+
+    UserDto:
+      type: object
+      properties:
+        displayName:
+          type: string
+          x-field-extra-annotation: "@lombok.ToString.Exclude"                                             # NO EXTERNAL
+          maxLength: 80
+          pattern: '^([\x20-\xFF]{1,80})$'
+        firstName:
+          type: string
+          x-field-extra-annotation: "@lombok.ToString.Exclude"                                             # NO EXTERNAL
+          maxLength: 80
+          pattern: '^([\x20-\xFF]{1,80})$'
+        lastName:
+          type: string
+          x-field-extra-annotation: "@lombok.ToString.Exclude"                                             # NO EXTERNAL
+          maxLength: 80
+          pattern: '^([\x20-\xFF]{1,80})$'
+        companyName:
+          type: string
+          x-field-extra-annotation: "@lombok.ToString.Exclude"                                             # NO EXTERNAL
+          maxLength: 250
+          pattern: '^([\x20-\xFF]{1,250})$'
+        fiscalCode:
+          type: string
+          x-field-extra-annotation: "@lombok.ToString.Exclude"                                             # NO EXTERNAL
+          maxLength: 16
+          pattern: '^([A-Z]{6}[0-9LMNPQRSTUV]{2}[A-Z]{1}[0-9LMNPQRSTUV]{2}[A-Z]{1}[0-9LMNPQRSTUV]{3}[A-Z]{1})|([0-9]{11})$'
+        person:
+          type: boolean
+      description: Available only for request where requesting user is the delegator
+      nullable: true
+
+
+    NotificationPaymentInfo:
+      title: Informazioni per effettuare il pagamento
+      description: >-
+       Informazioni utili per effettuare il pagamento di una notifica, sono associate al
+       destinatario perché le spese di notifica possono differire a seconda del canale di
+       notifica utilizzato. <br/>
+         - _noticeCode_: "codice avviso pagoPA" di pagamento del sistema pagoPA, usato per pagamento online.<br/>
+         - _creditorTaxId_: codice fiscale dell'ente a cui fa riferimento il "codice avviso pagoPA". <br/>
+         - _pagoPaForm_: riferimento al PDF contenete il bollettino pagoPA<br/>
+      type: object
+      required:
+        - noticeCode
+        - creditorTaxId
+      properties:
+        noticeCode:
+          $ref: 'schemas-pn-notification.yaml#/components/schemas/noticeCode'
+        creditorTaxId:
+          $ref: 'schemas-pn-notification.yaml#/components/schemas/paTaxId'
+        noticeCodeAlternative:
+          $ref: 'schemas-pn-notification.yaml#/components/schemas/noticeCode'
+        pagoPaForm:
+          $ref: "#/components/schemas/NotificationPaymentAttachment"
+
+
+    NotificationStatusHistoryElement:
+      description: elenco degli avanzamenti effettuati dal processo di notifica
       type: object
       required:
         - status
-        - messageId
+        - activeFrom
+        - relatedTimelineElements
       properties:
         status:
+          $ref: "#/components/schemas/NotificationStatus"
+        activeFrom:
           type: string
-          description: Stato della chiamata (SENT, ALREADY_TRIGGERED)
-          example: "SENT"
-        messageId:
-          type: string
-          description: Identificativo della notifica inviata o già inviata
-          example: "123e4567-e89b-12d3-a456-426614174000"
+          description: data e ora di raggiungimento dello stato di avanzamento
+          format: date-time
+        relatedTimelineElements:
+          type: array
+          description: Eventi avvenuti nello stato
+          items:
+            $ref: "#/components/schemas/TimelineElementId"
 
-    PushNotificationErrorResponse:
+    noticeCode:
+      description: Payment notice number  numero avviso
+      example: '302000100000019421'
+      type: string
+      maxLength: 18
+      minLength: 18
+      pattern: '^\d+$'
+
+    Nonce:
+      description: ""
+      type: string
+
+    
+    NotificationPaymentAttachment:
+      description: >-
+        Un modulo di pagamento allegato alla notifica
+      allOf:
+        - $ref: "#/components/schemas/NotificationAttachment"
+
+    MandateCreationRequest:
+      description: Dati necessari alla creazione di una delega
       type: object
       required:
-        - status
-        - error
+        - delegatorInfo
+        - delegateInfo
+        - nonceRequest
       properties:
+        delegatorInfo:
+            $ref: "#/components/schemas/UserDto"
+        delegateInfo:
+            $ref: "#/components/schemas/UserDto"
+        nonceRequest: 
+            $ref: "#/components/schemas/Nonce"
+
+    MandateDto:
+      type: object
+      required:
+         - delegator
+         - delegate
+      properties:
+        mandateId:
+          description: >-
+            Identificativo della delega, non richiesto alla creazione della
+            delega.
+          type: string
+          maxLength: 36
+          pattern: >-
+              ^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$
+        delegator:
+          $ref: '#/components/schemas/UserDto'
+        delegate:
+          $ref: '#/components/schemas/UserDto'
         status:
+          description: Stato della delega, non richiesto alla creazione della delega.
           type: string
-          description: Stato della chiamata (ERROR, FORBIDDEN, ecc.)
-          example: "ERROR"
-        error:
+          enum:
+            - pending
+            - active
+            - revoked
+            - rejected
+            - expired
+        visibilityIds:
+          description: Enti mittenti per cui è valida la delega
+          type: array
+          items:
+            $ref: '#/components/schemas/OrganizationIdDto'
+        verificationCode:
+          description: >-
+            Codice di verifica della delega. Disponibile solo per le richieste
+            ricevute dal delegante.
           type: string
-          description: Codice o descrizione dell'errore
-          example: "FORBIDDEN"
-        message:
+          maxLength: 5
+          pattern: ^[0-9]*$
+        datefrom:
           type: string
-          description: Messaggio di errore dettagliato
-          example: "Non hai i permessi per visualizzare questa notifica."
+          description: Data in formato ISO 8601
+          maxLength: 10
+          pattern: ^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$
+        dateto:
+          type: string
+          description: Data in formato ISO 8601
+          maxLength: 10
+          pattern: ^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$
+        groups:
+          type: array
+          description: Gruppi di utenti a cui la delega è concessa
+          items:
+            $ref: '#/components/schemas/GroupDto'
+    OrganizationIdDto:
+      description: Dati degli enti mittenti
+      properties:
+        name:
+          type: string
+          maxLength: 250
+          pattern: ^([\x20-\xFF]{1,250})$
+        uniqueIdentifier:
+          type: string
+          maxLength: 50
+          pattern: ^[ -~ ]*$
+
+
+    Problem:
+      properties:
+        type:
+          description: URI reference of type definition
+          type: string
+        status:
+          description: The HTTP status code generated by the origin server for this occurrence of the problem.
+          type: integer
+          format: int32
+          example: 503
+          maximum: 600
+          minimum: 100
+          exclusiveMaximum: true
+        title:
+          description: A short, summary of the problem type. Written in english and readable
+          example: Service Unavailable
+          maxLength: 64
+          pattern: ^[ -~]{0,64}$
+          type: string
+        detail:
+          description: A human readable explanation of the problem.
+          example: Request took too long to complete.
+          maxLength: 4096
+          pattern: ^.{0,4096}$
+          type: string
+        traceId:
+          description: Internal support identifier associated to error
+          example: 123e4567-e89b-12d3-a456-426614174000
+          type: string
+        timestamp:
+          description: date and time referred to UTC
+          example: 2022-07-27T12:22:33.444Z
+          type: string
+          format: date-time
+        errors:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/ProblemError'
+      required:
+        - status
+        - errors
+    ProblemError:
+      properties:
+        code:
+          description: Internal code of the error, in human-readable format
+          example: PN_PARAMETER_TOO_LONG | PN_PARAMETER_TOO_SHORT | PN_DUPLICATE_ENTRY | etc...
+          type: string
+        element:
+          description: Parameter or request body field name for validation error
+          example: 'body.order.item[2].quantity'
+          type: string
+        detail:
+          description: A human readable explanation specific to this occurrence of the problem.
+          example: Parameter not valid
+          maxLength: 1024
+          type: string
+      required:
+        - code
+
+      ############################################################################################
+    ###                                  DOWNLOAD ALLEGATI                                   ###
+    ############################################################################################
+
+    NotificationAttachmentDownloadMetadataResponse:
+      title: Url e metadati per il download di un allegato di una notifica
+      description: >-
+        I due campi più importanti sono __url__ e __retryAfter__. <br/>
+          - __url__ è presente se il file è pronto per essere scaricato ed indica l'url a cui fare GET.
+          - __retryAfter__ indica che il file è stato archiviato e bisognerà aspettare un numero di
+            secondi non inferiore a quanto indicato dal campo _retryAfter_. <br/>
+      type: object
+      required:
+        - filename
+        - contentType
+        - contentLength
+        - sha256
+      properties:
+        filename:
+          type: string
+        contentType:
+          type: string
+          example: 'application/pdf'
+        contentLength:
+          type: integer
+          format: int32
+          example: 54092
+          description: dimensione, in byte, del contenuto.
+        sha256:
+          type: string
+          description: >-
+            SHA256 del contenuto del file.
+        url:
+          type: string
+          description: >-
+            URL preautorizzato a cui effettuare una richiesta GET per ottenere il 
+            contenuto del documento. Presente solo se il documento è pronto per il download.
+        retryAfter:
+          type: integer
+          format: int32
+          description: >-
+            Stima del numero di secondi da aspettare prima che il contenuto del 
+            documento sia disponibile per il download.
+    
+
+    NotificationQuickAccessLinkTokens:
+      description: Dizionario recipientId/quickAccessLinkToken
+      type: object
+      additionalProperties:
+        type: string
