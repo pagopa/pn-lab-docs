@@ -6,9 +6,9 @@ La creazione di una delega su SEND avviene sempre in due passaggi :
 - Creazione della delega 
 - Validazione della richiesta
 
-Nella prima fase ( Creazione della Delega ) viene definita la delega (`mandateId`); La delega  non è ancora attiva e risulta essere in uno stato di attesa ( `status:PENDING`) per essere validata. Una delega non può mai essere modificata e deve essere validata entro un tempo definito (`time-to-live`)
+Nella prima fase ( *Creazione della Delega* ) viene definita la delega (`mandateId`); La delega  non è ancora attiva e risulta essere in uno stato di attesa ( `status:PENDING`) per essere validata. Una delega non può mai essere modificata e deve essere validata entro un tempo definito (`time-to-live`)
 
-Nella seconda fase (Validazione della delega) la delega viene validata. Le modalità di validazione dipendono dal flusso eseguito, vedi più avanti. 
+Nella seconda fase (*Validazione della delega*) la delega viene validata. Le modalità di validazione dipendono dal flusso eseguito, vedi più avanti. 
 
 ## Flusso di creazione delega
 Una delega può essere creata attraverso uno dei seguenti flussi (`flowType`) : 
@@ -27,10 +27,17 @@ Questo flusso parte dal delegato e viene confermato dal delegato stesso interage
 
 Le deleghe di questo flusso hanno una duranta standard di 1 anno
 
+
 ### Flusso cie 
 Questo flusso parte dal delegato e viene confermato dal delegato stesso senza interazione con il delegante, ma ottenendo i dati di lettura della sua CIE.
 
 Le deleghe di questo flusso hanno una duranta default di 15 minuti e non possono essere richieste durante superiori a 30 Minuti. Devono inoltre essere necessariamente filtrate per IUN
+
+### Dettagli
+Questo flusso è dedicato alle deleghe create tramite appIO, tutte le chiamate vengono ricevute tramite il backEnd di IO con l'aggiunta degli Header-Lollipop. 
+Ogni chiamata dovrà verificare la firma Lollipop prima di poter essere eseguita. 
+
+l'header x-pagopa-cx-taxId contiene l'identificativo del cittadino autenticato su IO che ha inviato la richiesta, ed in questo scenario rappresenta il Delegato ( *delegate* )
 
 
 ```mermaid
