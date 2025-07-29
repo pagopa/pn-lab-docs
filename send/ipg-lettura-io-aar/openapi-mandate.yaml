@@ -1,0 +1,208 @@
+openapi: 3.0.3
+info:
+  title: Mandate API
+  version: 2.0.0
+  description: API per la gestione del flusso di mandato come descritto nel diagramma mermaid.
+servers:
+  - url: http://localhost:8080/api
+
+paths:
+  /mandates:
+    post:
+      summary: Crea un nuovo mandato
+      description: |
+        Crea una nuova delega secondo il flusso specificato (`flowType`: standard, b2b, cie).
+      parameters:
+        - in: header
+          name: x-pagopa-cx-taxid
+          required: true
+          schema:
+            type: string
+          description: Codice fiscale del richiedente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MandateRequest'
+      responses:
+        '201':
+          description: Mandato creato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mandate'
+        '400':
+          description: Richiesta non valida
+        '409':
+          description: Mandato già esistente
+
+  /mandates/{mandateId}:
+    get:
+      summary: Recupera i dettagli di un mandato
+      parameters:
+        - name: mandateId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Dettagli del mandato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mandate'
+
+  /mandates/{mandateId}/validate-cie:
+    post:
+      summary: Valida una delega tramite CIE
+      parameters:
+        - name: mandateId
+          in: path
+          required: true
+          schema:
+            type: string
+        - in: header
+          name: x-pagopa-cx-taxid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MandateCieValidationRequest'
+      responses:
+        '200':
+          description: Mandato validato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mandate'
+        '400':
+          description: Richiesta non valida
+
+components:
+  schemas:
+    MandateRequest:
+      type: object
+      required:
+        - flowType
+        - delegator
+        - delegate
+      properties:
+        flowType:
+          type: string
+          enum: [standard, b2b, cie]
+          description: Tipo di flusso che si vuole innescare
+        delegator:
+          $ref: '#/components/schemas/User'
+        delegate:
+          $ref: '#/components/schemas/User'
+        duration:
+          type: string
+          format: duration
+          description: >
+            Durata della delega (RFC3339 duration, es. "P1Y" per 1 anno, "PT15M" per 15 minuti).
+            Esempi:
+              - Lunga durata (1 anno): "P1Y"
+              - Breve durata (15 minuti): "PT15M"
+            Qualora venga omesso, viene usato il valore di default rispetto al flowType indicato: 
+            - `standard`: 6 mesi
+            - `b2b`: 1 anno
+            - `cie`: 15 minuti
+          example: "P1Y"
+        filterOptions:
+          $ref: '#/components/schemas/FilterOptions'
+
+    FilterOptions:
+      type: array
+      maxItems: 5
+      description: >
+        Elenco di filtri distinti applicabili alla delega (massimo 5).
+        Ogni elemento rappresenta un filtro, e i filtri sono combinati tra loro con operatore OR.
+        All'interno di ciascun filtro, le condizioni sono combinate con operatore AND.
+      items:
+        type: object
+        properties:
+          iun:
+            type: array
+            items:
+              type: string
+            description: Lista di identificativi univoci di notifica (puntuali)
+          taxonomy:
+            type: array
+            items:
+              type: string
+            description: Lista di codici tassonomia
+          sender:
+            type: array
+            items:
+              type: string
+            description: Lista di codici fiscali degli enti mittenti
+      example:
+        - iun: ["IUN1234567890"]
+
+    MandateCieValidationRequest:
+      type: object
+      required:
+        - qrCode
+        - cieData
+        - signedValidationCode
+      properties:
+        qrCode:
+          type: string
+        cieData:
+          type: object
+          properties:
+            sod:
+              type: string
+            dg1:
+              type: string
+            dg11:
+              type: string
+        signedValidationCode:
+          type: string
+
+    MandateCreateResponse:
+      type: object
+      properties:
+        mandateId:
+          type: string
+        validationCode:
+          type: string
+        timeToLive:
+          type: integer
+
+    Mandate:
+      type: object
+      properties:
+        id:
+          type: string
+        delegator:
+          $ref: '#/components/schemas/User'
+        delegate:
+          $ref: '#/components/schemas/User'
+        flowType:
+          type: string
+        status:
+          type: string
+          enum: [CREATED, PENDING, APPROVED, REJECTED]
+        validationCode:
+          type: string
+        timeToLive:
+          type: integer
+        createdBy:
+          type: string
+          format: date-time
+        validatedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          description: Data e ora di scadenza della delega
+        filterOptions:
+          $ref: '#/components/schemas/FilterOptions'
