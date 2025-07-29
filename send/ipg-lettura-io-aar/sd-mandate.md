@@ -10,6 +10,10 @@ Nella prima fase ( *Creazione della Delega* ) viene definita la delega (`mandate
 
 Nella seconda fase (*Validazione della delega*) la delega viene validata. Le modalità di validazione dipendono dal flusso eseguito, vedi più avanti. 
 
+
+**Una delega viene conservata in piattaforma per XXX tempo e successivamente cancellata.**
+
+
 ## Flusso di creazione delega
 Una delega può essere creata attraverso uno dei seguenti flussi (`flowType`) : 
 
@@ -39,6 +43,10 @@ Ogni chiamata dovrà verificare la firma Lollipop prima di poter essere eseguita
 
 l'header x-pagopa-cx-taxId contiene l'identificativo del cittadino autenticato su IO che ha inviato la richiesta, ed in questo scenario rappresenta il Delegato ( *delegate* )
 
+Durante la fase di verifica della delega vengono ricevuti i dati della CIE e verificata l'integrità della CIE e la firma del validationCode. 
+
+**I dati della CIE vengono scritti all'interno degli audit-log , ma non persistiti sul database. 
+Come faccio a risalire ad un audit-log di una delega ?** 
 
 ```mermaid
 sequenceDiagram

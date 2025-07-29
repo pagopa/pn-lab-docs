@@ -148,15 +148,16 @@ components:
     MandateCieValidationRequest:
       type: object
       required:
-        - qrCode
         - cieData
         - signedValidationCode
       properties:
-        qrCode:
-          type: string
         cieData:
           type: object
           properties:
+            public_key:
+              type: string
+              description: >-
+                Chiave pubblica della CIE utilizzata per la verifica della firma.
             sod:
               type: string
             dg1:
@@ -165,16 +166,6 @@ components:
               type: string
         signedValidationCode:
           type: string
-
-    MandateCreateResponse:
-      type: object
-      properties:
-        mandateId:
-          type: string
-        validationCode:
-          type: string
-        timeToLive:
-          type: integer
 
     Mandate:
       type: object
@@ -194,7 +185,7 @@ components:
           type: string
         timeToLive:
           type: integer
-        createdBy:
+        createdAt:
           type: string
           format: date-time
         validatedAt:
