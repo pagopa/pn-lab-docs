@@ -110,6 +110,11 @@ components:
               type: string
               description: Description of the validation status
               example: "The document has been validated"
+            predictedRefinementType:
+                type: string
+                enum:
+                  - PRE10
+                  - POST10
     ocr_data_payload:
       type: object
       properties:
@@ -135,6 +140,8 @@ components:
               description: Product type
               enum:
                 - AR
+                - RIR
+                - 890
               example: "AR"
             documentType:
               type: string
@@ -157,7 +164,7 @@ components:
               properties:
                 deliveryDetailCode:
                   type: string
-                  example: "RECRN001B"
+                  example: "RECRN001C"
                 notificationDate:
                   type: string
                   format: date-time
@@ -181,14 +188,20 @@ components:
                 attachment:
                   type: string
                   format: uri
-                  example: "safestorage://PN_EXTERNAL_LEGAL_FACTS-14f3dbdc57574459812a96a0a0bc204d.pdf"
+                  description: S3 presigned URL to the attachment
+                deliveryAttemptDate:
+                  type: string
+                  format: date-time
+                  example: "2024-09-21T10:30:00Z"
               allOf:
                 - if:
                     properties:
                       deliveryDetailCode:
                         enum:
-                          - RECRN002B
-                          - RECRN002E
+                          - RECRN002C
+                          - RECRN002F
+                          - RECAG003C
+                          - RECAG003F
                   then:
                     required:
                       - deliveryFailureCause
