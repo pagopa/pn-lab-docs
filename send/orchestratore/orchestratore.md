@@ -40,7 +40,7 @@ Il primo passo per poter inviare un messaggio è la creazione di una "campagna d
 - tassonomia 
 
 > La campagna individua il caso d'uso dell'Ente e contiene le informazioni di carattere comune/generale delle notifiche. Non contiene dati degli individui. La immagino a due step per effettuare verifiche prima di abilitarli all'invio dei messaggi. 
-
+ 
 
 ```mermaid
 sequenceDiagram
@@ -61,6 +61,14 @@ note over cmp: CREATED
 ## Invio del Messaggio 
 L'ente invia il messaggio ai destinatari 
 
+
+
+> Dovremo capire come meglio identificare il messaggio a quale campagna appartiene, abbiamo diverse strade 
+>  - *path parameters* : questa opzione è semplice, ma stiamo legando in maniera forte due microservizi 
+>  - *authentication*: potremmo generare delle chiavi (stile x-apy-key o altra soluzione  ) alla creazione della campagna. Questo genera due livelli di autenticazione ( admin e delle campagna ).
+> - *all'interno del body* 
+
+
 ```mermaid
 sequenceDiagram
 actor ec as "Ente/Client"
@@ -70,7 +78,7 @@ participant val as validator
 participant time as timeline
 end
 
-ec ->> cmp : POST /campaigns/{campaignId}/messages
+ec ->> cmp : POST /messages
 cmp ->> cmp : create
 note over cmp: DRAFT
 cmp -->> ec: OK (DRAFT)
