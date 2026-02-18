@@ -78,7 +78,7 @@ components:
           type: string
           description: Version of the schema
           example: "1.0.0"
-        CommandId:
+        commandId:
           type: string
           description: Command unique ID
           example: "1234567890"
@@ -181,7 +181,7 @@ components:
                 attachment:
                   type: string
                   format: uri
-                  example: "safestorage://PN_EXTERNAL_LEGAL_FACTS-14f3dbdc57574459812a96a0a0bc204d.pdf"
+                  example: "https://download-document-url.com/document.pdf"
               allOf:
                 - if:
                     properties:
