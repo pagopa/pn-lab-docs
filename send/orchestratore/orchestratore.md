@@ -49,7 +49,7 @@ box SEND
 participant cmp as campaignManager
 end
 
-ec ->> cmp : createCampaign()
+ec ->> cmp : POST /CommunicationPlans
 cmp ->> cmp : create
 note over cmp: DRAFT
 cmp -->> ec: OK (DRAFT)
@@ -78,7 +78,7 @@ participant val as validator
 participant time as timeline
 end
 
-ec ->> cmp : POST /messages
+ec ->> cmp : POST /messages/v1/submit
 cmp ->> cmp : create
 note over cmp: DRAFT
 cmp -->> ec: OK (DRAFT)

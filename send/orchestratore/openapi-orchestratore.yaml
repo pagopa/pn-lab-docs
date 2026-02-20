@@ -1,0 +1,684 @@
+---
+openapi: 3.0.0
+info:
+  title: Unified Message Delivery API
+  description: 'API per il servizio di Orchestratore. '
+  version: 2.4.0
+  license:
+    name: CC BY-NC-SA 4.0
+    url: https://creativecommons.org/licenses/by-nc-sa/4.0/
+  contact:
+    name: PagoPA - Integration Support
+    email: blabla@pagopa.it
+servers:
+- url: https://api.send.pagopa.it/pdnd
+  description: SEND - Servizio Notifiche Digitali (notifiche multi-canale + posta)
+  x-backend: send-backend
+paths:
+  "/CommunicationPlans":
+    post:
+      summary: Create a communication plan
+      description: "Creazione di una campagna di comunicazione. La campagna di comunicazione
+        definisce : \n- la tipologia di comunicazione \n- la classificazione delle
+        informazioni \n- i canali di comunicazione \n- Configura/Crea il corrispondente
+        servizio su IO App da utilizzare \n\n>Il body è polimorfico, ovvero gli atributi
+        da utilizzare sono diversi a seconda se si utilizza o meno un servizio IO
+        pre-esistente \n\n**Open Points** \n- E' una creazione sincrona o richiede
+        due-step ?"
+      operationId: createCommunicationPlan
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        description: Chiave per garantire l'idempotenza della richiesta POST
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CommunicationPlanRequest"
+      responses:
+        '201':
+          description: Communication plan creation request accepted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CommunicationPlanResponse"
+        '400':
+          description: Invalid request - validation errors on schema SEND
+        '401':
+          description: Unauthorized - Invalid API Key
+        '403':
+          description: Forbidden - Service not authorized for this operation
+        '422':
+          description: Unprocessable entity - business logic validation failed
+        '500':
+          description: Internal server error
+      security:
+      - PdndBearer: []
+      tags:
+      - CommunicationPlans
+  "/CommunicationPlans/{campaignId}":
+    get:
+      summary: Get communication plan details
+      description: Recupera i dettagli di una campagna di comunicazione specifica.
+      operationId: getCommunicationPlan
+      parameters:
+      - name: campaignId
+        in: path
+        description: Identificativo univoco della campagna di comunicazione
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: Communication plan details retrieved successfully
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CommunicationPlanResponse"
+        '401':
+          description: Unauthorized - Invalid credentials
+        '404':
+          description: Communication plan not found
+        '500':
+          description: Internal server error
+      security:
+      - PdndBearer: []
+      tags:
+      - CommunicationPlans
+  "/messages/v1/submit":
+    post:
+      summary: Submit unified message delivery request
+      description: Sottomette una richiesta di messaggio
+      operationId: submitMessageRequest
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        description: Chiave per garantire l'idempotenza della richiesta POST. UUID
+          v4 o identificativo univoco della richiesta.
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: x-campaign-id
+        in: header
+        description: Identificativo della campagna di comunicazione
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/NotificationRequest"
+      responses:
+        '201':
+          description: Notification submission request accepted
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/NotificationResponse"
+              example:
+                iun: ABCD-ABCD-ABCD-202600-A-1
+                request_id: 01EM6X4JB9VSZTQ8H16KMQFCEJ
+                status: ACCEPTED
+                tracking_url: https://api.send.pagopa.it/delivery/v2.4/notifications/ABCD-ABCD-ABCD-202600-A-1
+        '400':
+          description: Invalid request - validation errors on schema SEND
+        '401':
+          description: Unauthorized - Invalid API Key
+        '403':
+          description: Forbidden - Service not authorized for this operation
+        '422':
+          description: Unprocessable entity - business logic validation failed
+        '500':
+          description: Internal server error
+      security:
+      - PdndBearer: []
+      tags:
+      - Messages
+  "/messages/{iun}/status":
+    get:
+      summary: Get notification delivery status
+      description: Recupera lo stato dettagliato di consegna di una notifica, incluse
+        le informazioni su tutti i canali di recapito utilizzati (IO, Email, SMS,
+        Posta).
+      operationId: getNotificationDeliveryStatus
+      parameters:
+      - name: iun
+        in: path
+        description: 'Identificativo Univoco Notifica (formato: ABCD-ABCD-ABCD-NNNNNN-L-N)'
+        required: true
+        schema:
+          type: string
+          pattern: "^[A-Z]{4}-[A-Z]{4}-[A-Z]{4}-[0-9]{6}-[A-Z]{1}-[0-9]{1}$"
+      responses:
+        '200':
+          description: Notification status retrieved successfully
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/NotificationStatus"
+        '401':
+          description: Unauthorized
+        '404':
+          description: Notification not found
+      tags:
+      - Messages
+components:
+  schemas:
+    CommunicationPlanRequest:
+      type: object
+      required: []
+      properties:
+        name:
+          type: string
+          minLength: 10
+          maxLength: 120
+        classified:
+          type: boolean
+          description: Indica se la comunicazione è classificata come riservata/confidenziale.
+            Se true, il sistema applicherà misure di sicurezza aggiuntive durante
+            la consegna (es. canali digitali con autenticazione, restrizioni su stampa
+            e consegna cartacea, etc.)
+        workflowMetadata:
+          "$ref": "#/components/schemas/WorkflowMetadata"
+        taxonomy:
+          type: string
+          description: Classificazione della comunicazione secondo tassonomia predefinita.
+            Usata per analisi e reportistica.
+        description:
+          type: string
+          description: Descrizione della campagna di comunicazione. Utile per identificare
+            e distinguere le campagne nei report e dashboard. Su IO corrisponde alla
+            descrizione del Servizio
+          minLength: 80
+          maxLength: 10000
+        linked_service_io:
+          type: string
+          description: Identificativo del servizio IO associato alla campagna. Usato
+            per instradamento verso IO App e personalizzazione del messaggio in app.
+        organization:
+          type: object
+          description: Informazioni sull'organizzazione mittente della comunicazione.
+            Utile per personalizzazione messaggio, reportistica e tracciamento.
+          properties:
+            department_name:
+              type: string
+              description: nome del dipartimento/ufficio dell'organizzazione mittente.
+                Utile per personalizzazione messaggio e reportistica
+            name:
+              type: string
+              description: Nome dell'organizzazione
+        metadata:
+          type: object
+          description: Campo mutuato dai Servizi IO, da verificare ( contiene TOS,
+            Privacy, punto di contatto)
+    WorkflowMetadata:
+      type: object
+      required:
+      - communication_type
+      - channels
+      properties:
+        communication_type:
+          type: string
+          enum:
+          - STANDARD
+          description: Tipologia della comunicazione. STANDARD=comunicazione ordinaria,
+            potrebbe essere esteso a LEGAL (domani)
+        channels:
+          type: array
+          minItems: 1
+          items:
+            "$ref": "#/components/schemas/WorkflowChannelConfig"
+          description: 'Configurazione dei canali di consegna. Ogni canale può essere
+            abilitato/disabilitato '
+    WorkflowChannelConfig:
+      type: object
+      required:
+      - channel
+      - enabled
+      properties:
+        channel:
+          type: string
+          enum:
+          - EMAIL
+          - PEC
+          - SMS
+          - PAPER
+          description: Canale di recapito da usare nel workflow.
+        enabled:
+          type: boolean
+          description: Se true il canale è attivo; se false il canale è disattivato
+            e non viene usato.
+    CommunicationPlanResponse:
+      type: object
+      properties:
+        campaign_id:
+          type: string
+          format: uuid
+          description: Identificativo univoco della campagna di comunicazione appena
+            creata
+        message:
+          type: string
+          description: Messaggio di conferma o ulteriori istruzioni
+    NotificationRequest:
+      type: object
+      required:
+      - recipients
+      properties:
+        pa_protocol_number:
+          type: string
+          maxLength: 256
+          description: 'Numero di protocollo assegnato dalla PA mittente; usato per
+            tracciamento e identificazione univoca della comunicazione da parte della
+            PA. '
+        body_message:
+          type: string
+          minLength: 80
+          maxLength: 10000
+          description: 'Corpo della notifica in formato markdown (80-10000 caratteri).
+            Usato come: (1) corpo del messaggio per IO App (markdown renderizzato),
+            (2) per SEND verrà estratto il plain text e usato come abstract della
+            notifica. Supporta: **bold**, *italic*, # heading, liste, link, etc.'
+          example: |-
+            # Avviso di Pagamento
+
+            Caro cittadino,
+
+            ti comunichiamo che è stata emessa una **cartella esattoriale** per tributi comunali.
+
+            ## Importo dovuto
+            **€ 500,00**
+
+            ## Scadenza
+            *28 febbraio 2026*
+
+            Puoi effettuare il pagamento tramite:
+            - Bollettino pagoPA
+            - Home banking
+            - Sportelli bancari
+
+            Per maggiori informazioni: www.comune.roma.it
+        recipients:
+          type: array
+          minItems: 1
+          maxItems: 1
+          items:
+            "$ref": "#/components/schemas/NotificationRecipient"
+          description: Lista dei destinatari della notifica; Attualmente supportato
+            solo un destinatario per richiesta (maxItems=1) per semplificare l'integrazione
+            con IO App. Ogni destinatario include informazioni su canali digitali
+            (PEC, Email) e indirizzo fisico per fallback cartaceo, oltre a eventuali
+            informazioni di pagamento associate.
+        payment_info:
+          "$ref": "#/components/schemas/PaymentInfo"
+        documents:
+          type: array
+          minItems: 1
+          items:
+            "$ref": "#/components/schemas/Document"
+          description: Documenti da notificare (min 1). Primo documento è quello principale.
+        additional_languages:
+          type: array
+          items:
+            "$ref": "#/components/schemas/TranslatedContent"
+          maxItems: 3
+          description: 'Lingue aggiuntive con testi tradotti forniti dall''ente (non
+            tradotti automaticamente). Lingue supportate: DE=Tedesco, SI=Sloveno,
+            FR=Francese. L''ente deve fornire subject e description tradotti per ogni
+            lingua aggiuntiva.'
+    NotificationRecipient:
+      type: object
+      required:
+      - recipient_type
+      - tax_id
+      - denomination
+      properties:
+        recipient_type:
+          type: string
+          enum:
+          - PF
+          - PG
+          description: PF=Persona Fisica, PG=Persona Giuridica
+          example: PF
+        tax_id:
+          type: string
+          minLength: 11
+          maxLength: 16
+          pattern: "^([A-Z]{6}[0-9LMNPQRSTUV]{2}[A-Z]{1}[0-9LMNPQRSTUV]{2}[A-Z]{1}[0-9LMNPQRSTUV]{3}[A-Z]{1})|([0-9]{11})$"
+          description: CF persona fisica (16 chars) o partita IVA (11 cifre)
+          example: AAAAAA00A00A000A
+        denomination:
+          type: string
+          minLength: 1
+          maxLength: 88
+          description: Nome/Ragione sociale del destinatario
+          example: Mario Rossi
+        digital_domicile:
+          "$ref": "#/components/schemas/DigitalDomicile"
+        physical_address:
+          "$ref": "#/components/schemas/PhysicalAddress"
+    TranslatedContent:
+      type: object
+      required:
+      - language
+      - subject
+      - description
+      properties:
+        language:
+          type: string
+          enum:
+          - DE
+          - SI
+          - FR
+          description: Codice lingua. DE=Tedesco, SI=Sloveno, FR=Francese.
+          example: DE
+        subject:
+          type: string
+          minLength: 10
+          maxLength: 120
+          description: Titolo della notifica tradotto nella lingua specificata (10-120
+            caratteri).
+          example: Zahlungsaufforderung - Zahlungserneuerung
+        description:
+          type: string
+          minLength: 80
+          maxLength: 10000
+          description: 'Descrizione della notifica tradotta in formato markdown nella
+            lingua specificata (80-10000 caratteri). Supporta gli stessi formati della
+            versione italiana: **bold**, *italic*, # heading, liste, link, etc. L''ente
+            è responsabile della qualità della traduzione.'
+          example: |-
+            # Zahlungsmitteilung
+
+            Lieber Mitbürger,
+
+            wir teilen Ihnen mit, dass eine **Zahlungsaufforderung** für Gemeindesteuern ausgestellt wurde.
+
+            ## Fälliger Betrag
+            **€ 500,00**
+
+            ## Verfallsdatum
+            *28. Februar 2026*
+    DigitalDomicile:
+      type: object
+      required:
+      - type
+      - address
+      properties:
+        type:
+          type: string
+          enum:
+          - PEC
+          description: Tipo di domicilio digitale. Attualmente solo PEC supportato.
+        address:
+          type: string
+          maxLength: 320
+          pattern: ^(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\.)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?|\[(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$
+          description: Indirizzo PEC del destinatario
+          example: mario.rossi@pec.it
+    PhysicalAddress:
+      type: object
+      required:
+      - address
+      - municipality
+      properties:
+        at:
+          type: string
+          maxLength: 44
+          description: Campo 'presso' dell'indirizzo
+        address:
+          type: string
+          minLength: 2
+          maxLength: 1024
+          description: Via e numero civico
+          example: Via Roma 10
+        address_details:
+          type: string
+          maxLength: 1024
+          description: Seconda riga dell'indirizzo (interno, scala, etc.)
+        zip:
+          type: string
+          maxLength: 15
+          pattern: "^[\\w\\s-]*$"
+          description: Codice di avviamento postale. Facoltativo per estero.
+          example: '00100'
+        municipality:
+          type: string
+          minLength: 2
+          maxLength: 256
+          description: Comune
+          example: Roma
+        municipality_details:
+          type: string
+          maxLength: 256
+          description: Frazione o località
+        province:
+          type: string
+          maxLength: 256
+          description: Provincia
+          example: RM
+        foreign_state:
+          type: string
+          maxLength: 256
+          description: Denominazione paese estero (se applicabile)
+    PaymentInfo:
+      type: object
+      properties:
+        pagopa_iupd:
+          type: string
+          description: Identificativo Univoco Posizione Debitoria (IUPD) da piattaforma
+            pagoPA GPD. Il backend recupererà automaticamente notice_code, creditor_tax_id
+            e altri dettagli dalla piattaforma pagoPA utilizzando questo identificativo.
+          example: '01199250158-000000000000000001'
+    Attachment:
+      type: object
+      required:
+      - digests
+      - content_type
+      - ref
+      properties:
+        digests:
+          type: object
+          required:
+          - sha256
+          properties:
+            sha256:
+              type: string
+              minLength: 43
+              maxLength: 44
+              pattern: "^[A-Za-z0-9+\\/]{43}=|[A-Za-z0-9+\\/]{44}$"
+              description: Digest SHA256 dell'allegato in base64
+              example: perNormalize8x+Yqqqqqqqqqqqqqqqqqqqqqqqqq=
+        content_type:
+          type: string
+          enum:
+          - application/pdf
+          - application/json
+          description: Tipo di contenuto. PDF per documenti e bollettini, JSON per
+            metadati F24.
+          example: application/pdf
+        ref:
+          type: object
+          required:
+          - key
+          - version_token
+          properties:
+            key:
+              type: string
+              maxLength: 512
+              pattern: "^(safestorage:\\/\\/)?[A-Za-z0-9._-]+$"
+              description: Chiave di storage (con prefisso safestorage:// opzionale)
+              example: safestorage://atto-2026-001
+            version_token:
+              type: string
+              maxLength: 256
+              description: Token versione corrispondente a x-amz-version-id
+              example: v1.0
+    Document:
+      type: object
+      required:
+      - digests
+      - content_type
+      - ref
+      - title
+      properties:
+        digests:
+          type: object
+          required:
+          - sha256
+          properties:
+            sha256:
+              type: string
+              minLength: 43
+              maxLength: 44
+              pattern: "^[A-Za-z0-9+\\/]{43}=|[A-Za-z0-9+\\/]{44}$"
+              description: Digest SHA256 del documento in base64
+              example: perNormalize8x+Yqqqqqqqqqqqqqqqqqqqqqqqqq=
+        content_type:
+          type: string
+          enum:
+          - application/pdf
+          description: Tipo di contenuto. Attualmente supportato solo application/pdf.
+          example: application/pdf
+        ref:
+          type: object
+          required:
+          - key
+          - version_token
+          properties:
+            key:
+              type: string
+              maxLength: 512
+              pattern: "^(safestorage:\\/\\/)?[A-Za-z0-9._-]+$"
+              description: Chiave di storage del documento
+              example: safestorage://atto-2026-001
+            version_token:
+              type: string
+              maxLength: 256
+              description: Token versione corrispondente a x-amz-version-id
+              example: v1.0
+        title:
+          type: string
+          minLength: 1
+          maxLength: 512
+          description: Titolo del documento (nome file)
+          example: Atto_Notifica_Pagamento.pdf
+        doc_idx:
+          type: string
+          maxLength: 3
+          pattern: "^\\d+$"
+          description: Indice del documento partendo da 0. Primo documento è quello
+            principale.
+          example: '0'
+    NotificationResponse:
+      type: object
+      properties:
+        iun:
+          type: string
+          minLength: 25
+          maxLength: 25
+          pattern: "^[A-Z]{4}-[A-Z]{4}-[A-Z]{4}-[0-9]{6}-[A-Z]{1}-[0-9]{1}$"
+          description: Identificativo Univoco Notifica assegnato dal sistema
+          example: ABCD-ABCD-ABCD-202600-A-1
+        request_id:
+          type: string
+          description: Identificativo della richiesta nel sistema (per tracking interno)
+          example: 01EM6X4JB9VSZTQ8H16KMQFCEJ
+        status:
+          type: string
+          enum:
+          - ACCEPTED
+          - PROCESSING
+          - SENT
+          - FAILED
+          description: Stato iniziale della notifica
+        tracking_url:
+          type: string
+          format: uri
+          description: URL per il tracking dello stato della notifica
+          example: https://api.send.pagopa.it/delivery/v2.4/notifications/ABCD-ABCD-ABCD-202600-A-1
+    NotificationStatus:
+      type: object
+      properties:
+        iun:
+          type: string
+          description: Identificativo Univoco Notifica
+        status:
+          type: string
+          enum:
+          - ACCEPTED
+          - DELIVERED
+          - FAILED
+          - IN_PROGRESS
+          description: Stato globale della notifica
+        recipients:
+          type: array
+          items:
+            type: object
+            properties:
+              tax_id:
+                type: string
+                description: CF/P.IVA destinatario
+              denomination:
+                type: string
+                description: Nome destinatario
+              delivery_details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    channel:
+                      type: string
+                      enum:
+                      - EMAIL
+                      - PEC
+                      - SMS
+                      - IO_APP
+                      - PAPER
+                      description: Canale di consegna utilizzato
+                    status:
+                      type: string
+                      enum:
+                      - DELIVERED
+                      - FAILED
+                      - PENDING
+                      - IN_PROGRESS
+                      description: Stato della consegna su questo canale
+                    delivered_at:
+                      type: string
+                      format: date-time
+                      description: Data/ora di consegna
+                    error_code:
+                      type: string
+                      description: Codice di errore se fallito
+                    error_message:
+                      type: string
+                      description: Messaggio di errore
+        updated_at:
+          type: string
+          format: date-time
+          description: Ultimo aggiornamento dello stato
+  securitySchemes:
+    PdndBearer:
+      type: http
+      scheme: bearer
+      description: PDND Authorization Bearer token PDND. Token JWT per l'autenticazione
+        tramite PDND.
+security:
+- PdndBearer: []
+tags:
+- name: CommunicationPlans
+  description: Operazioni per la gestione delle campagne di comunicazione, inclusa
+    la creazione di nuove campagne con configurazione dei canali di consegna.
+- name: Messages
+  description: Operazioni per la gestione delle notifiche, inclusa la sottomissione
+    di richieste di consegna e il recupero dello stato di consegna.
