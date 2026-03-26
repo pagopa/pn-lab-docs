@@ -1,0 +1,452 @@
+openapi: 3.0.3
+info:
+  title: Servizio Standard ERDS - Relay Interface (PDND)
+  x-summary: API REST per l'inoltro (relay) sicuro dei messaggi ERDS conforme a ETSI EN 319 522-2.
+  description: |
+    Specifica standard per il servizio di RelayMessage tra provider ERDS (Electronic Registered Delivery Services) 
+    conforme a ETSI EN 319 522-2, erogato tramite la Piattaforma Digitale Nazionale Dati (PDND).
+    Questa API deve essere implementata da ciascun ERDS per permettere l'inoltro (relay) sicuro 
+    di costrutti 'ERD dispatch' nel modello a 4 angoli.
+  version: 1.0.0
+  contact:
+    name: Supporto API ERDS
+    url: https://example-erds.it/support
+    email: support@example-erds.it
+
+servers:
+  - url: https://{erds-domain}/pdnd/erds/v1
+    description: Endpoint standard esposto dal singolo ERDS Erogatore
+    variables:
+      erds-domain:
+        default: api.example-erds.it
+        description: Dominio dell'ERDS che eroga l'e-service.
+
+tags:
+  - name: Relay Interface
+    description: Operazioni relative all'inoltro (relay) dei messaggi tra sistemi ERDS.
+  - name: Health
+    description: Endpoint per il monitoraggio dello stato dell'API.
+
+paths:
+  /status:
+    get:
+      summary: API health-check
+      operationId: healthCheck
+      description: Endpoint utilizzato dai sistemi di monitoraggio per verificare lo stato di salute del servizio.
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Servizio attivo e funzionante.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  status:
+                    type: string
+                    maxLength: 50
+                    example: "UP"
+        '503':
+          description: Servizio non disponibile.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /relay:
+    post:
+      summary: Inoltra un messaggio ERD (Relay) tramite PDND
+      operationId: relayMessagePDND
+      description: |
+        Riceve un costrutto 'ERD dispatch' (contenuto, metadati ed evidenze) dal S-ERDS (Fruitore) 
+        per consegnarlo al R-ERDS (Erogatore). L'accesso è autorizzato tramite Voucher PDND.
+      tags:
+        - Relay Interface
+      security:
+        - pdndBearerAuth: []
+      parameters:
+        - in: header
+          name: X-Correlation-ID
+          required: true
+          schema:
+            type: string
+            format: uuid
+            maxLength: 36
+          description: Identificativo univoco della transazione per il tracciamento distribuito.
+      requestBody:
+        description: Payload ERD dispatch scambiato direttamente tra gli enti (non transita in PDND).
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ERDDispatch'
+      responses:
+        '200':
+          description: Relay accettato con successo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RelayResponse'
+        '400':
+          description: Errore di validazione del payload (es. Digest errato o firma mancante).
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          description: Non autorizzato - Voucher PDND mancante o invalido.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '403':
+          description: Accesso negato - Il fruitore non è autorizzato ad accedere all'e-service.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '500':
+          description: Errore interno dell'ERDS ricevente.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+components:
+  securitySchemes:
+    pdndBearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT (Voucher) rilasciato dalla Piattaforma Digitale Nazionale Dati (PDND). 
+        Il token è nel formato JWS ed è conforme alle specifiche e raccomandazioni di sicurezza incluse nella RFC8725.
+
+  schemas:
+    # --------------------------------------------------------------------------
+    # SCHEMA PROBLEM (RFC 7807)
+    # --------------------------------------------------------------------------
+    Problem:
+      type: object
+      additionalProperties: false
+      description: Oggetto di errore standardizzato secondo RFC 7807 (Problem Details for HTTP APIs).
+      properties:
+        type:
+          type: string
+          format: uri
+          maxLength: 255
+        title:
+          type: string
+          maxLength: 255
+          example: "Service Unavailable"
+        status:
+          type: integer
+          format: int32
+          minimum: 100
+          maximum: 600
+          example: 503
+        detail:
+          type: string
+          maxLength: 1024
+        instance:
+          type: string
+          format: uri
+          maxLength: 255
+
+    # --------------------------------------------------------------------------
+    # STRUTTURA PRINCIPALE: ERD Dispatch
+    # --------------------------------------------------------------------------
+    ERDDispatch:
+      type: object
+      additionalProperties: false
+      description: Costrutto ERD dispatch che raggruppa contenuto, metadati ed evidenze.
+      required:
+        - userContent
+        - relayMetadata
+        - evidence
+      properties:
+        userContent:
+          $ref: '#/components/schemas/UserContent'
+        relayMetadata:
+          $ref: '#/components/schemas/RelayMetadata'
+        evidence:
+          type: array
+          description: Insieme delle evidenze ERDS (almeno una presente nel costrutto dispatch).
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/Evidence'
+
+    # --------------------------------------------------------------------------
+    # CONTENUTO UTENTE (User Content)
+    # --------------------------------------------------------------------------
+    UserContent:
+      type: object
+      additionalProperties: false
+      description: Il contenuto reale del messaggio sottomesso dall'utente.
+      required:
+        - oggetto
+        - testo
+      properties:
+        oggetto:
+          type: string
+          maxLength: 1024
+        testo:
+          type: string
+          maxLength: 500000
+        allegati:
+          type: array
+          minItems: 0
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/Attachment'
+
+    Attachment:
+      type: object
+      additionalProperties: false
+      required:
+        - filename
+        - contentType
+        - content
+      properties:
+        filename:
+          type: string
+          maxLength: 255
+        contentType:
+          type: string
+          maxLength: 100
+        content:
+          type: string
+          format: byte
+          maxLength: 104857600
+          description: Contenuto binario codificato in Base64.
+
+    # --------------------------------------------------------------------------
+    # METADATI DI RELAY (MD01 - MD15)
+    # --------------------------------------------------------------------------
+    RelayMetadata:
+      type: object
+      additionalProperties: false
+      required:
+        - MetadataVersion
+        - SenderId
+        - RecipientId
+        - ERDMessageType
+        - UserContentInfo
+      properties:
+        MetadataVersion:
+          type: string
+          maxLength: 50
+          description: MD01 - Versione dei metadati (es. EN319522v1.1.1).
+        RelayDateAndTime:
+          type: string
+          format: date-time
+          maxLength: 50
+        SenderId:
+          type: string
+          maxLength: 255
+          description: MD08 - Identificativo univoco del mittente originario.
+        RecipientId:
+          type: string
+          maxLength: 255
+          description: MD10 - Identificativo univoco del destinatario finale.
+        MessageIdentifier:
+          type: string
+          maxLength: 255
+          description: MD11 - Identificativo univoco del messaggio originale.
+        ERDMessageType:
+          type: string
+          maxLength: 255
+          description: MD13 - Tipo di messaggio (http://uri.etsi.org/19522/v1#/ERDMessageType/dispatch).
+        UserContentInfo:
+          $ref: '#/components/schemas/UserContentInfo'
+
+    UserContentInfo:
+      type: object
+      additionalProperties: false
+      description: MD14 / M02 - Dettaglio struttura contenuto per verifica integrità.
+      required:
+        - ComposingParts
+        - PartsInfo
+      properties:
+        AppLayerIdentifier:
+          type: string
+          maxLength: 255
+        ComposingParts:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 1000
+        PartsInfo:
+          type: array
+          minItems: 1
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/PartInfo'
+
+    PartInfo:
+      type: object
+      additionalProperties: false
+      required:
+        - Identifier
+        - ContentType
+        - DigestMethod
+        - DigestValue
+      properties:
+        Identifier:
+          type: string
+          maxLength: 255
+        ContentType:
+          type: string
+          maxLength: 100
+        DigestMethod:
+          type: string
+          format: uri
+          maxLength: 255
+        DigestValue:
+          type: string
+          format: byte
+          maxLength: 512
+
+    # --------------------------------------------------------------------------
+    # EVIDENZE (Componenti G, R, I, M)
+    # --------------------------------------------------------------------------
+    Evidence:
+      type: object
+      additionalProperties: false
+      required:
+        - EvidenceIdentifier
+        - EvidenceVersion
+        - ERDSEventId
+        - EventTime
+        - EvidenceIssuerDetails
+        - UserContentInfo      # <-- AGGIUNTO (Componente M02 obbligatorio)
+        - Signature
+      properties:
+        EvidenceIdentifier:
+          type: string
+          maxLength: 255
+          description: G01 - ID univoco dell'evidenza.
+        EvidenceVersion:
+          type: string
+          maxLength: 50
+          description: G02 - Versione formato evidenza.
+        ERDSEventId:
+          type: string
+          format: uri
+          maxLength: 255
+          description: G03 - URI evento scatenante.
+        EventReasons:
+          type: array
+          minItems: 1
+          maxItems: 20
+          description: G04 - Ragioni evento.
+          items:
+            $ref: '#/components/schemas/EventReason'
+        EventTime:
+          type: string
+          format: date-time
+          maxLength: 50
+          description: G05 - Timestamp esatto dell'evento.
+        EvidenceIssuerPolicyID:
+          type: array
+          minItems: 1
+          maxItems: 10
+          items:
+            type: string
+            maxLength: 255
+        EvidenceIssuerDetails:
+          $ref: '#/components/schemas/EntityDetails'
+        SenderDetails:
+          $ref: '#/components/schemas/UserDetails'
+        RecipientDetails:
+          type: array
+          minItems: 1
+          maxItems: 1000
+          items:
+            $ref: '#/components/schemas/UserDetails'
+        UserContentInfo:
+          $ref: '#/components/schemas/UserContentInfo'
+          description: M02 - Replica delle informazioni strutturali del contenuto (stesso formato di MD14). Sigillato dalla firma dell'evidenza.
+        Signature:
+          type: string
+          maxLength: 20000
+          description: R03 - Firma digitale dell'evidenza (Base64).
+    
+    EventReason:
+      type: object
+      additionalProperties: false
+      required:
+        - Code
+      properties:
+        Code:
+          type: string
+          format: uri
+          maxLength: 255
+        Details:
+          type: string
+          maxLength: 2048
+
+    # --------------------------------------------------------------------------
+    # DETTAGLI UTENTI ED ENTITÀ (Conformi a ETSI EN 319 522-3)
+    # --------------------------------------------------------------------------
+    EntityDetails:
+      type: object
+      additionalProperties: false
+      description: R02 - Dettagli provider emittente (EntityDetailsType).
+      properties:
+        Identity:
+          type: array
+          minItems: 1
+          maxItems: 50
+          description: Attributi di identità dell'entità.
+          items:
+            type: string
+            maxLength: 1024
+        CertificateDetails:
+          type: string
+          format: byte
+          maxLength: 10000
+          description: Dettagli del certificato X.509 in formato Base64.
+
+    UserDetails:
+      type: object
+      additionalProperties: false
+      description: I01/I05 - Attributi identità utente mittente/destinatario (UserDetailsType).
+      properties:
+        Identity:
+          type: array
+          minItems: 1
+          maxItems: 50
+          description: Attributi di identità dell'utente (es. attributi SAML).
+          items:
+            type: string
+            maxLength: 1024
+        Identifier:
+          type: string
+          maxLength: 255
+          description: Identificatore univoco dell'utente.
+        AssuranceLevelsDetails:
+          type: string
+          maxLength: 2048
+          description: Dettagli sui livelli di garanzia di identificazione/autenticazione.
+
+    # --------------------------------------------------------------------------
+    # RISPOSTE
+    # --------------------------------------------------------------------------
+    RelayResponse:
+      type: object
+      additionalProperties: false
+      description: Schema per la risposta in caso di successo
+      properties:
+        status:
+          type: string
+          maxLength: 50
+          example: "ACCEPTED"
+        message:
+          type: string
+          maxLength: 1024
+          example: "Il payload ERD dispatch è stato inoltrato e preso in carico con successo."
