@@ -1,2 +1,25 @@
-./user_data/*
-./_bmad/*
+# ─────────────────────────────────────────────────────────────
+# Cartelle e file nascosti (prefisso punto)
+# Tutto il tooling locale risiede in risorse dot-prefixed:
+# .github/skills  → skill BMAD
+# .venv-kipi-pdf  → virtual environment Python locale
+# ─────────────────────────────────────────────────────────────
+.*
+!.gitignore
+
+# ─────────────────────────────────────────────────────────────
+# Metodo BMad — processo AI-driven SPEC interamente locale
+#
+# _bmad/           → configurazione agenti, memoria, session log
+# _bmad-output/    → artefatti generati (planning, impl, test)
+# core_knowledge/  → output BMad rinominato
+# user-data/       → documenti di intake: spec ETSI, project scope
+# ─────────────────────────────────────────────────────────────
+_bmad/
+_bmad-output/
+user-data/
+
+# ─────────────────────────────────────────────────────────────
+# Note di lavoro locali
+# ─────────────────────────────────────────────────────────────
+CreateKipi.txt
