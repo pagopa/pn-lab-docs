@@ -323,6 +323,8 @@ components:
         - ERDSEventId
         - EventTime
         - EvidenceIssuerDetails
+        - SenderDetails
+        - RecipientDetails
         - UserContentInfo      # <-- AGGIUNTO (Componente M02 obbligatorio)
         - Signature
       properties:
@@ -397,6 +399,8 @@ components:
       type: object
       additionalProperties: false
       description: R02 - Dettagli provider emittente (EntityDetailsType).
+      required:
+        - Identity
       properties:
         Identity:
           type: array

@@ -1,0 +1,397 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema targetNamespace="http://uri.etsi.org/19522/v1#" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" xmlns="http://uri.etsi.org/19522/v1#" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+	<xs:import namespace="http://www.w3.org/XML/1998/namespace" schemaLocation="http://www.w3.org/2001/xml.xsd"/>
+	<xs:import namespace="http://www.w3.org/2000/09/xmldsig#" schemaLocation="http://www.w3.org/TR/2002/REC-xmldsig-core-20020212/xmldsig-core-schema.xsd"/>
+	<xs:import namespace="urn:oasis:names:tc:SAML:2.0:assertion" schemaLocation="http://docs.oasis-open.org/security/saml/v2.0/saml-schema-assertion-2.0.xsd"/>
+	<xs:element name="Evidence" type="EvidenceType"/>
+	<xs:complexType name="EvidenceType">
+		<xs:sequence>
+		   <xs:element ref="EvidenceIdentifier"/>
+			<xs:element ref="ERDSEventId"/>
+			<xs:group ref="Components"/>
+		</xs:sequence>
+		<xs:attribute name="version" type="xs:string" use="required"/>
+		<xs:attribute name="Id" type="xs:ID" use="optional"/>
+	</xs:complexType>
+	<!-- Evidence identifier definition -->
+	<xs:element name="EvidenceIdentifier" type="xs:string"/>
+	<!-- -->
+	<!-- Definition of ERDSEvent-->
+	<!-- -->
+	<xs:element name="ERDSEventId" type="NonEmptyURIType">
+		<xs:annotation>
+			<xs:documentation>Each ERDSEvent element will identify, with a URI reference, the event whose occurrence has triggered the production of the evidence
+			</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<!-- -->
+	<!-- Definition of Components group -->
+	<!-- -->
+	<xs:group name="Components">
+		<xs:sequence>
+			<xs:element ref="EventReasons" minOccurs="0"/>
+			<xs:element name="EventTime" type="xs:dateTime"/>
+			<xs:element ref="EvidenceIssuerPolicyID" minOccurs="0"/>
+			<xs:element ref="EvidenceIssuerDetails"/>
+			<xs:element ref="SenderDetails"/>
+			<xs:element ref="SenderDelegateDetails" minOccurs="0"/>
+			<xs:element ref="RecipientDetails" maxOccurs="unbounded"/>
+			<xs:element ref="RecipientsDelegateDetails" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element ref="SubmissionTime" minOccurs="0"/>
+			<xs:element name="EvidenceRefersToRecipient" type="xs:integer" minOccurs="0"/>
+			<xs:element ref="MessageIdentifier" minOccurs="0"/>
+			<xs:element ref="UserContentInfo" minOccurs="0"/>
+			<xs:element ref="ExternalERDSDetails" minOccurs="0"/>
+			<xs:element name="ForwardedToExternalSystem" type="xs:string" minOccurs="0"/>
+			<xs:element ref="TransactionLogInformation" minOccurs="0"/>
+			<xs:element ref="Extensions" minOccurs="0"/>
+			<xs:element ref="ds:Signature" minOccurs="0"/>
+		</xs:sequence>
+	</xs:group>
+	<!-- -->
+	<!-- Definition of EventReasons -->
+	<!-- -->
+	<xs:element name="EventReasons" type="EventReasonsType"/>
+	<xs:complexType name="EventReasonsType">
+		<xs:sequence>
+			<xs:element ref="EventReason" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="EventReason" type="EventReasonType"/>
+	<xs:complexType name="EventReasonType">
+		<xs:annotation>
+			<xs:documentation>The EventReason's Code child element will identify, with a URI reference, one of the reasons that have caused the ERDSEvent. The Details child element will provide additional details if required
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Code" type="xs:anyURI"/>
+			<xs:element name="Details" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<!-- Definition of EvidenceIssuerPolicyID -->
+	<!-- -->
+	<xs:element name="EvidenceIssuerPolicyID" type="ERDSPolicyIDType"/>
+	<xs:complexType name="ERDSPolicyIDType">
+		<xs:annotation>
+			<xs:documentation>Each PolicyID child element will identify, with a URI reference, one of the applicable policies. If one policy is identified with an OID, then the URI reference value will be a URN whose value is compliant with RFC 3061
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="PolicyID" type="xs:anyURI" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<xs:element name="EvidenceIssuerDetails" type="EntityDetailsType"/>
+	<xs:element name="ExternalERDSDetails" type="EntityDetailsType"/>
+	<!-- Definition of EvidenceIssuerDetails and EntityDetailsType-->
+	<xs:complexType name="EntityDetailsType">
+		<xs:sequence>
+			<xs:element ref="Identity"/>
+			<xs:element ref="CertificateDetails" minOccurs="0"/>
+			<xs:element ref="Any" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<!--Definition of Identity element-->
+	<!-- -->
+	<xs:element name="Identity" type="IdentityAttributesType"/>
+	<xs:complexType name="IdentityAttributesType">
+		<xs:sequence>
+			<xs:element ref="saml:Attribute" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- Definition of CertificateDetailsType-->
+	<!-- -->
+	<xs:element name="CertificateDetails" type="CertificateDetailsType"/>
+	<xs:complexType name="CertificateDetailsType">
+		<xs:choice maxOccurs="3">
+			<xs:element name="X509Certificate" type="xs:base64Binary"/>
+			<xs:element name="CertID" type="CertIDTypeV2"/>
+			<xs:element ref="CertIDAndSignature"/>
+		</xs:choice>
+	</xs:complexType>
+	<!-- -->
+	<!-- Definition of CertIDAndSignature and CertIDAndSignatureType-->
+	<!-- OPTION 1 -->
+	<!-- -->
+	<xs:element name="CertIDAndSignature" type="CertIDAndSignatureType"/>
+	<xs:complexType name="CertIDAndSignatureType">
+		<xs:sequence>
+			<xs:element name="CertID" type="CertIDTypeV2"/>
+			<xs:element ref="CertSignatureDetails"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<!-- Definition of CertSignatureDetails -->
+	<!-- -->
+	<xs:element name="CertSignatureDetails" type="CertSignatureDetailsType"/>
+	<xs:complexType name="CertSignatureDetailsType">
+		<xs:sequence>
+			<xs:element ref="ds:SignatureMethod"/>
+			<xs:element ref="ds:SignatureValue"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<!--SenderDetails, RecipientDetails, and RecipientsDelegateDetails-->
+	<!-- -->
+	<xs:element name="SenderDetails" type="UserDetailsType"/>
+	<xs:element name="RecipientDetails" type="UserDetailsType"/>
+	<xs:element name="RecipientsDelegateDetails" type="RecipientsDelegatesDetailsType"/>
+	<xs:element name="SenderDelegateDetails" type="UserDetailsType"/>
+	<!-- UserDetailsType -->
+	<!-- -->
+	<xs:complexType name="UserDetailsType">
+		<xs:sequence>
+			<xs:element ref="Identity" minOccurs="0" />
+			<xs:element name="Identifier" type="EntityIdentifierType" minOccurs="0" />
+			<xs:element name="AssuranceLevelsDetails" type="AssuranceLevelsDetailsType" minOccurs="0" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="RecipientsDelegatesDetailsType">
+		<xs:complexContent>
+			<xs:extension base="UserDetailsType">
+				<xs:sequence>
+					<xs:element name="DelegatingRecipients" type="ListOfIntegers"/>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- IdentifierType -->
+	<!-- -->
+	<xs:complexType name="EntityIdentifierType">
+		<xs:simpleContent>
+			<xs:extension base="NonEmptyStringType">
+				<xs:attribute name="IdentifierSchemeName" type="NonEmptyStringType" use="required"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<!-- AssuranceLevelsDetailsType -->
+	<!-- -->
+	<xs:complexType name="AssuranceLevelsDetailsType">
+		<xs:choice>
+			<xs:sequence>
+				<xs:element name="GlobalAssuranceLevel" type="AssuranceLevelDetailsType"/>
+				<xs:element ref="AuthenticationDetails"/>
+			</xs:sequence>
+			<xs:sequence>
+				<xs:element ref="AuthenticationDetsAndAssuranceLevel"/>
+				<xs:element name="IdentityProofAssuranceLevel" type="AssuranceLevelDetailsType"/>
+				<xs:element name="FederationAssuranceLevel" type="AssuranceLevelDetailsType" minOccurs="0"/>
+			</xs:sequence>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="AssuranceLevelDetailsType">
+		<xs:sequence>
+			<xs:element name="AssuranceLevel" type="xs:anyURI"/>
+			<xs:element name="PolicyID" type="xs:anyURI" minOccurs="0"/>
+			<xs:element name="PolicyIDDetails" type="xs:string" minOccurs="0"/>
+			<xs:element name="PolicyIDDetailsResources" type="NonEmptyMultiLangURIListType" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="AuthenticationDetails" type="AuthenticationDetailsType"/>
+	<xs:complexType name="AuthenticationDetailsType">
+		<xs:choice>
+			<xs:element ref="saml:Assertion"/>
+			<xs:element name="OAuth2" type="AnyType"/>
+			<xs:sequence>
+				<xs:element name="AuthenticationTime" type="xs:dateTime"/>
+				<xs:element name="AuthenticationMethod" type="xs:anyURI"/>
+			</xs:sequence>
+			<xs:element name="other" type="AnyType"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:element name="AuthenticationDetsAndAssuranceLevel" type="AuthenticationDetsAndAssuranceLevelType"/>
+	<xs:complexType name="AuthenticationDetsAndAssuranceLevelType">
+		<xs:sequence>
+			<xs:element name="AssuranceLevel" type="AssuranceLevelDetailsType"/>
+			<xs:element ref="AuthenticationDetails" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="ListOfIntegers">
+		<xs:list itemType="xs:integer"/>
+	</xs:simpleType>
+	<xs:element name="UserContentInfo" type="UserContentInfoType"/>
+	<xs:complexType name="UserContentInfoType">
+		<xs:sequence>
+			<xs:element name="AppLayerIdentifier" type="xs:string" minOccurs="0"/>
+			<xs:element name="ComposingParts" type="xs:int" minOccurs="0"/>
+			<xs:element ref="PartsInfo"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="PartsInfo" type="PartsInfoType"/>
+	<xs:complexType name="PartsInfoType">
+		<xs:sequence maxOccurs="unbounded">
+			<xs:element ref="PartInfo"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="PartInfo" type="PartInfoType"/>
+	<xs:complexType name="PartInfoType">
+		<xs:sequence>
+			<xs:element name="Identifier" type="xs:string"/>
+			<xs:element name="ContentType" type="xs:string"/>
+			<xs:element ref="ds:DigestMethod" minOccurs="0"/>
+			<xs:element ref="ds:DigestValue" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="TransactionLogInformation" type="TransactionLogInformationType"/>
+	<xs:complexType name="TransactionLogInformationType">
+		<xs:sequence>
+			<xs:element ref="TransactionLog" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="TransactionLog" type="AnyType"/>
+	<xs:element name="Extensions" type="ExtensionsListType"/>
+	<xs:complexType name="ExtensionsListType">
+		<xs:sequence maxOccurs="unbounded">
+			<xs:element ref="Extension"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="Extension" type="ExtensionType"/>
+	<xs:complexType name="ExtensionType">
+		<xs:complexContent>
+			<xs:extension base="AnyType">
+				<xs:attribute name="isCritical" type="xs:boolean" use="optional"/>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<!-- -->
+	<!-- Auxiliary Types -->
+	<!-- -->
+	<!-- URI related types -->
+	<!-- -->
+	<xs:simpleType name="NonEmptyURIType">
+		<xs:restriction base="xs:anyURI">
+			<xs:minLength value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="NonEmptyAttributedURIType">
+		<xs:simpleContent>
+			<xs:extension base="NonEmptyURIType">
+				<xs:attribute ref="xml:lang" use="optional"/>
+				<xs:attribute name="scheme" type="xs:string" use="optional"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="NonEmptyMultiLangURIType">
+		<xs:simpleContent>
+			<xs:extension base="NonEmptyURIType">
+				<xs:attribute ref="xml:lang" use="required"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="NonEmptyMultiLangURIListType">
+		<xs:sequence>
+			<xs:element name="URI" type="NonEmptyMultiLangURIType" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<!-- -->
+	<!-- String related types -->
+	<!-- -->
+	<xs:simpleType name="NonEmptyStringType">
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="AttributedNonEmptyStringType">
+		<xs:simpleContent>
+			<xs:extension base="NonEmptyStringType">
+				<xs:attribute name="type" type="NonEmptyStringType" use="required"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<!-- -->
+	<!-- Any and AnyType -->
+	<!-- -->
+	<xs:element name="Any" type="AnyType"/>
+	<xs:complexType name="AnyType" mixed="true">
+		<xs:sequence minOccurs="0" maxOccurs="unbounded">
+			<xs:any namespace="##any" processContents="lax"/>
+		</xs:sequence>
+		<xs:anyAttribute namespace="##any"/>
+	</xs:complexType>
+	<!-- -->
+	<!-- CertIDTypeV2 -->
+	<!-- -->
+	<xs:complexType name="CertIDTypeV2">
+		<xs:sequence>
+			<xs:element name="CertDigest" type="DigestAlgAndValueType"/>
+			<xs:element name="IssuerSerialV2" type="xs:base64Binary" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="URI" type="xs:anyURI" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="DigestAlgAndValueType">
+		<xs:sequence>
+			<xs:element ref="ds:DigestMethod"/>
+			<xs:element ref="ds:DigestValue"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="RelayMetadata" type="RelayMetadataType"/>
+	<xs:complexType name="RelayMetadataType">
+		<xs:sequence>
+			<xs:element ref="MessageIdentifier"/>
+			<xs:element name="ERDMessageType" type="ERDSMessageTypeType"/>
+			<xs:element name="InReplyTo" type="MessageIdentifierType" minOccurs="0"/>
+			<xs:element name="RelayTime" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="ExpirationTime" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="ScheduledDeliveryTime" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="SenderId" type="EntityIdentifierType"/>
+			<xs:element name="ReplyTo" type="EntityIdentifierType" minOccurs="0"/>
+			<xs:element name="RecipientId" type="EntityIdentifierType"/>
+			<xs:element ref="UserContentInfo"/>
+			<xs:element name="RequiredAssuranceLevel" type="AssuranceLevelDetailsType" minOccurs="0"/>
+			<xs:element name="ApplicablePolicy" type="ERDSPolicyIDType" minOccurs="0"/>
+			<xs:element name="RequestedConsignmentMode" type="ConsigmentModeType" minOccurs="0"/>
+			<xs:element ref="Extensions" minOccurs="0"/>
+			<xs:element ref="ds:Signature" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="version" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:string"/>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="SubmissionTime" type="xs:dateTime"/>
+	<xs:simpleType name="ConsigmentModeType">
+		<xs:restriction base="xs:anyURI">
+			<xs:enumeration value="http://uri.etsi.org/19522/v1#/consignment/basic"/>
+			<xs:enumeration value="http://uri.etsi.org/19522/v1#/consignment/consent"/>
+			<xs:enumeration value="http://uri.etsi.org/19522/v1#/consignment/signed"/>
+			<xs:enumeration value="http://uri.etsi.org/19522/v1#/consignment/other"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="ERDSMessageTypeType">
+		<xs:restriction base="xs:anyURI">
+			<xs:enumeration value="http://uri.etsi.org/19522/v1#/ERDMessageType/dispatch"/>
+			<xs:enumeration value="http://uri.etsi.org/19522/v1#/ERDMessageType/receipt"/>
+			<xs:enumeration value="http://uri.etsi.org/19522/v1#/ERDMessageType/serviceInfo"/>
+			<xs:enumeration value="http://uri.etsi.org/19522/v1#/ERDMessageType/payload"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:element name="MessageIdentifier" type="MessageIdentifierType"/>
+	<xs:simpleType name="MessageIdentifierType">
+		<xs:restriction base="NonEmptyStringType"/>
+	</xs:simpleType>
+
+
+	<xs:element name="ERDSMetadata" type="ERDSMetadataType"/>
+	<xs:complexType name="ERDSMetadataType">
+		<xs:sequence>
+			<xs:element name="ERDSId" type="EntityIdentifierType"/>
+			<xs:element name="ERDSDomain" type="xs:string"/>
+			<xs:element name="ERDSGoverningBody" type="xs:string"/>
+			<xs:element name="ERDSProfileSupported" type="xs:anyURI"/>
+			<xs:element name="ERDSMetadataRepository" type="xs:anyURI" minOccurs="0"/>
+      	<xs:element name="ERDSEUQualifiedIndicator" type="xs:boolean" minOccurs="0"/>
+      	<xs:element name="ERDSTLSLocation" type="xs:anyURI" minOccurs="0"/>
+			<xs:element name="ERDSRootCACertLocation" type="xs:anyURI" minOccurs="0"/>
+			<xs:element name="ERDSExpiryDateAndTimeSupport" type="xs:boolean"/>
+			<xs:element name="ERDSScheduledDeliverySupport" type="xs:boolean"/>
+ 			<xs:element name="ERDSAssuranceLevelsSupported" type="AssuranceLevelDetailsType" minOccurs="0"/>
+      	<xs:element name="ERDSPolicySupport" type="ERDSPolicyIDType" minOccurs="0"/>
+      	<xs:element name="ERDSSupportedConsignmentModes" type="ConsigmentModeType" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="version" use="required"/>
+	</xs:complexType>
+
+</xs:schema>
