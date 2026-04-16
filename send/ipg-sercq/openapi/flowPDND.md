@@ -29,14 +29,8 @@ si assume che gli Aderenti abbiano provveduto a:
 
 
 PDND e gli Aderenti attuano il flow previsto:
-- per Bearer Token: https://www.rfc-editor.org/rfc/rfc6750
-- per DPoP Token: https://www.rfc-editor.org/rfc/rfc9449
-
-
-1. L'Erogatore effettua acccess token request per una specifica finalità relative ad un e-service [nel caso di DPoP Token presente anche una DPoP Proof] 
-2. La PDND effettua autenticazione ed autorizzazione ed emette access token
-3. L'erogatore effettua l'accesso all'e-service presentato l'access token emesso da PDND [nel caso di DPoP Token presente anche una DPoP Proof] 
-4. Il fruitore verifica l'access token (correttezza e firma da parte di PDND) [nel caso di DPoP Token verifica la DPoP Proof presentata] e abilità l'accesso
+- per Bearer Token in https://www.rfc-editor.org/rfc/rfc6750
+- per DPoP Token:ì in https://www.rfc-editor.org/rfc/rfc9449
 
 ```mermaid
 
@@ -48,3 +42,9 @@ PDND e gli Aderenti attuano il flow previsto:
     Fruitore ->> Ergoatore: request access with access token [& DPoP Proof] 
     Ergoatore -->> Fruitore: response
 ```
+
+1. L'Erogatore effettua acccess token request per una specifica finalità relative ad un e-service [nel caso di DPoP Token presente anche una DPoP Proof] 
+2. La PDND effettua autenticazione ed autorizzazione ed emette access token
+3. L'erogatore effettua l'accesso all'e-service presentato l'access token emesso da PDND [nel caso di DPoP Token presente anche una DPoP Proof] 
+4. Il fruitore verifica l'access token (correttezza e firma da parte di PDND) [nel caso di DPoP Token verifica la DPoP Proof presentata] e abilità l'accesso
+
