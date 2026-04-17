@@ -37,6 +37,43 @@ A first compliance mapping has been completed between the PN Lab relay interface
 | ETSI EN 319 522-2 | V1.2.1 | Relay metadata semantics, evidence components, identifier definition |
 | ETSI EN 319 522-3 | V1.1.1 | Wire formats, entity/user/assurance types, signature profile |
 
+### Official Normative Schema Source
+
+The ETSI schema file `1952203xmlSchema.xsd` is treated as an official normative resource for this profile.
+
+- Official source ingested in workspace: `user-data/etsi-specifications/incoming/1952203xmlSchema.xsd`
+- Project copy used in relay package: `send/ipg-sercq/1952203xmlSchema.xsd`
+
+This XSD defines both `Evidence` and `RelayMetadata` types. For this report update, the primary focus is the `Evidence` model and its placement in the relay JSON payload.
+
+---
+
+## Relay Payload Positioning (JSON Profile)
+
+The relay transport model in the current OpenAPI draft is:
+
+- `userContent` -> business payload
+- `relayMetadata` -> relay/routing metadata
+- `evidence[]` -> one or more ETSI evidence objects
+
+This means the ETSI XSD `Evidence` structure is mapped inside `ERDDispatch.evidence[]` (array), not as the root transport object.
+
+| Relay payload block | ETSI semantic domain | Mapping status |
+|---|---|---|
+| `userContent` | Application content (outside ETSI Evidence root) | Profile-specific |
+| `relayMetadata` | ETSI RelayMetadata | Partially aligned |
+| `evidence[]` | ETSI Evidence (`EvidenceType`) | Aligned with profile adaptations |
+
+### Evidence Mapping Notes (XSD -> JSON profile)
+
+- XSD `Evidence/@version` is represented as JSON property `EvidenceVersion`.
+- XSD optional `Evidence/@Id` is currently not exposed in JSON schema.
+- XSD `UserContentInfo` is optional in `EvidenceType`, but profile makes it mandatory to preserve digest continuity.
+- XSD `ds:Signature` is optional by cardinality, while profile currently requires `Signature` in the `Evidence` schema.
+- Several optional ETSI Evidence components (`SenderDelegateDetails`, `RecipientsDelegateDetails`, `ExternalERDSDetails`, `TransactionLogInformation`, `Extensions`) are not currently represented.
+
+These differences are interpreted as profile choices unless they collide with mandatory ETSI obligations.
+
 ---
 
 ## Relay Metadata Cardinality — ETSI Table 5
