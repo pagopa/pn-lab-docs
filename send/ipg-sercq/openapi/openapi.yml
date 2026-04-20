@@ -337,10 +337,7 @@ components:
           maxLength: 50
           description: G02 - Versione formato evidenza.
         ERDSEventId:
-          type: string
-          format: uri
-          maxLength: 255
-          description: G03 - URI evento scatenante.
+          $ref: '#/components/schemas/ERDSRelayEventId'
         EventReasons:
           type: array
           minItems: 1
@@ -377,20 +374,85 @@ components:
           type: string
           maxLength: 20000
           description: R03 - Firma digitale dell'evidenza (Base64).
+
+    ERDSRelayEventId:
+      type: string
+      format: uri
+      maxLength: 255
+      description: G03 - URI evento relay ETSI.
+      enum:
+        - http://uri.etsi.org/19522/Event/RelayAcceptance
+        - http://uri.etsi.org/19522/Event/RelayRejection
+        - http://uri.etsi.org/19522/Event/RelayFailure
+
+    EventReasonCode:
+      type: string
+      description: Codice profilo della ragione evento relay.
+      enum:
+        - RB01
+        - RB02
+        - RB03
+        - RB04
+        - RB05
+        - RB06
+        - RB07
+        - RB08
+        - RB09
+        - RB10
+        - RB21
+        - RB22
+        - RBXX
+
+    EventReasonUri:
+      type: string
+      format: uri
+      maxLength: 255
+      description: URI della ragione evento relay (ETSI canonica o profilo locale, es. caso RBXX).
+      x-etsi-known-values:
+        - http://uri.etsi.org/19522/EventReason/S_ERDS_MessageSuccessfullyRelayed
+        - http://uri.etsi.org/19522/EventReason/R_ERDS_MessageRejected
+        - http://uri.etsi.org/19522/EventReason/R_ERDS_MessageRejectedForMalware
+        - http://uri.etsi.org/19522/EventReason/R_ERDS_MessageRejectedForInvalidSignature
+        - http://uri.etsi.org/19522/EventReason/R_ERDS_MessageRejectedForInvalidCertificate
+        - http://uri.etsi.org/19522/EventReason/R_ERDS_PolicyViolation
+        - http://uri.etsi.org/19522/EventReason/R_ERDS_Malfunction
+        - http://uri.etsi.org/19522/EventReason/R_ERDS_NotIdentified
+        - http://uri.etsi.org/19522/EventReason/R_ERDS_Unreachable
+        - http://uri.etsi.org/19522/EventReason/UnknownRecipient
+        - http://uri.etsi.org/19522/EventReason/MessageNotAcceptedForUnregisteredRecipient
+        - http://uri.etsi.org/19522/EventReason/S_ERDSP_ReceivedNoRelayAcceptanceInfoFromR_ERDSP
     
     EventReason:
       type: object
       additionalProperties: false
       required:
-        - Code
+        - code
+        - uri
       properties:
-        Code:
-          type: string
-          format: uri
-          maxLength: 255
-        Details:
+        code:
+          $ref: '#/components/schemas/EventReasonCode'
+        uri:
+          $ref: '#/components/schemas/EventReasonUri'
+        detail:
           type: string
           maxLength: 2048
+      x-etsi-relay-reason-matrix:
+        http://uri.etsi.org/19522/Event/RelayAcceptance:
+          - RB01
+        http://uri.etsi.org/19522/Event/RelayRejection:
+          - RB02
+          - RB03
+          - RB04
+          - RB05
+          - RB06
+          - RB21
+        http://uri.etsi.org/19522/Event/RelayFailure:
+          - RB07
+          - RB08
+          - RB09
+          - RB10
+          - RB22
+          - RBXX
 
     # --------------------------------------------------------------------------
     # DETTAGLI UTENTI ED ENTITÀ (Conformi a ETSI EN 319 522-3)
