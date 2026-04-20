@@ -46,6 +46,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Problem"
+        '500':
+          description: Errore interno dell'ERDS ricevente.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
 
   /relay:
     post:
