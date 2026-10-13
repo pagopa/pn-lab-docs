@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Structural test fixture before signing; test identities and assurance, not a publishable evidence. -->
+<e:Evidence xmlns:e="http://uri.etsi.org/19522/v1#"
+            xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
+            version="EN319522v1.1.1">
+  <e:EvidenceIdentifier>urn:uuid:123e4567-e89b-42d3-a456-426614174000</e:EvidenceIdentifier>
+  <e:ERDSEventId>http://uri.etsi.org/19522/Event/SubmissionAcceptance</e:ERDSEventId>
+  <EventTime>2026-10-09T15:00:05.000Z</EventTime>
+  <e:EvidenceIssuerPolicyID>
+    <PolicyID>urn:send:test-only:evidence-policy</PolicyID>
+  </e:EvidenceIssuerPolicyID>
+  <e:EvidenceIssuerDetails>
+    <e:Identity>
+      <saml:Attribute Name="http://eidas.europa.eu/attributes/legalperson/LegalName"
+                      NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+        <saml:AttributeValue>SEND test issuer</saml:AttributeValue>
+      </saml:Attribute>
+    </e:Identity>
+  </e:EvidenceIssuerDetails>
+  <e:SenderDetails>
+    <Identifier IdentifierSchemeName="urn:send:identifier-scheme:it:codice-fiscale">77777777777</Identifier>
+    <AssuranceLevelsDetails>
+      <e:AuthenticationDetsAndAssuranceLevel>
+        <AssuranceLevel>
+          <AssuranceLevel>urn:send:test-only:authentication-assurance</AssuranceLevel>
+        </AssuranceLevel>
+      </e:AuthenticationDetsAndAssuranceLevel>
+      <IdentityProofAssuranceLevel>
+        <AssuranceLevel>urn:send:test-only:identity-assurance</AssuranceLevel>
+      </IdentityProofAssuranceLevel>
+    </AssuranceLevelsDetails>
+  </e:SenderDetails>
+  <e:RecipientDetails>
+    <Identifier IdentifierSchemeName="urn:send:identifier-scheme:it:codice-fiscale">01229430085</Identifier>
+  </e:RecipientDetails>
+  <e:SubmissionTime>2026-10-09T15:00:05.000Z</e:SubmissionTime>
+  <e:MessageIdentifier>urn:send:message:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa</e:MessageIdentifier>
+  <e:UserContentInfo>
+    <e:PartsInfo>
+      <e:PartInfo>
+        <Identifier>urn:send:message:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/parts/metadata</Identifier>
+        <ContentType>application/json</ContentType>
+      </e:PartInfo>
+      <e:PartInfo>
+        <Identifier>urn:send:message:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/parts/documents/0</Identifier>
+        <ContentType>application/pdf</ContentType>
+      </e:PartInfo>
+      <e:PartInfo>
+        <Identifier>urn:send:message:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/parts/payments/0/pagoPa/attachment</Identifier>
+        <ContentType>application/pdf</ContentType>
+      </e:PartInfo>
+    </e:PartsInfo>
+  </e:UserContentInfo>
+</e:Evidence>
