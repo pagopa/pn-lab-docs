@@ -1,0 +1,46 @@
+{
+  "fixtureOnly": true,
+  "internalOnly": true,
+  "auditRetentionYears": 10,
+  "before": {
+    "recordId": "internal-before-record",
+    "executionId": "internal-acceptance-attempt-1",
+    "tenantId": "test-pa",
+    "requestId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "operation": "ACCEPT_NOTIFICATION",
+    "phase": "BEFORE",
+    "recordedAt": "2026-10-09T15:00:04.000Z"
+  },
+  "success": {
+    "recordId": "internal-success-record",
+    "executionId": "internal-acceptance-attempt-1",
+    "tenantId": "test-pa",
+    "requestId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "operation": "ACCEPT_NOTIFICATION",
+    "phase": "SUCCESS",
+    "state": "ACCEPTED",
+    "iun": "ABCD-EFGH-IJKL-202610-M-1",
+    "acceptedAt": "2026-10-09T15:00:05.000Z",
+    "recordedAt": "2026-10-09T15:00:05.100Z"
+  },
+  "integrityVerification": {
+    "recordId": "internal-integrity-record",
+    "requestId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    "tenantId": "test-pa",
+    "profile": "INTEGRITY_REST_02",
+    "result": "PASSED",
+    "verifiedAt": "2026-10-09T15:00:00.100Z"
+  },
+  "recipientContexts": {
+    "a": {
+      "messageIdentifier": "urn:send:message:aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+      "evidenceIdentifier": "urn:uuid:123e4567-e89b-42d3-a456-426614174000",
+      "projectionDigestSha256": "sYaOZsn1Xc5idrxxpWpmF10Kr7MkuhHPsTlXvksVRz4="
+    },
+    "b": {
+      "messageIdentifier": "urn:send:message:bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+      "evidenceIdentifier": "urn:uuid:223e4567-e89b-42d3-a456-426614174000",
+      "projectionDigestSha256": "o9EGm3VUUb1OForhh8qmkhY2EPNpBTvZm/MUBG1zoUM="
+    }
+  }
+}
